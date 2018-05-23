@@ -28,6 +28,7 @@ import com.spotify.scio.tensorflow._
 import org.tensorflow.example.Example
 import shapeless.datatype.tensorflow._
 
+
 object ShapelessTensorFlowExample {
   // Define case class representation of TensorFlow `Example`
   case class WordCount(word: String, count: Long)

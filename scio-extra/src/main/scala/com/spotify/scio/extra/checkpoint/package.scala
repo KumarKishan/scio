@@ -18,13 +18,15 @@
 package com.spotify.scio.extra
 
 import com.spotify.scio.ScioContext
+<<<<<<< HEAD
+=======
+import com.spotify.scio.coders.Coder
+>>>>>>> 5f3acc85... Introduce static coders
 import com.spotify.scio.avro._
 import com.spotify.scio.io.{FileStorage, ObjectFileIO}
 import com.spotify.scio.util.ScioUtil
 import com.spotify.scio.values.SCollection
 import org.apache.beam.sdk.io.FileSystems
-
-import scala.reflect.ClassTag
 
 /**
  * Main package for checkpoint API. Import all.
@@ -54,7 +56,7 @@ package object checkpoint {
      * @param fn result of this arbitrary => [[com.spotify.scio.values.SCollection SCollection]]
      *           flow is what is checkpointed
      */
-    def checkpoint[T: ClassTag](fileOrPath: String)
+    def checkpoint[T: Coder](fileOrPath: String)
                                (fn: => SCollection[T]): SCollection[T] = {
       FileSystems.setDefaultPipelineOptions(self.options)
       val path = if (self.isTest) {
@@ -73,7 +75,11 @@ package object checkpoint {
     }
 
     private def isCheckpointAvailable(path: String): Boolean = {
+<<<<<<< HEAD
       if (self.isTest && self.testInput.m.contains(CheckpointIO(path).testId)) {
+=======
+      if (self.isTest && self.testInput.m.contains(CheckpointIO[Unit](path).testId)) {
+>>>>>>> 5f3acc85... Introduce static coders
         // if it's test and checkpoint was registered in test
         true
       } else {

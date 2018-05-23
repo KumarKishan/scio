@@ -28,6 +28,7 @@ import org.apache.beam.sdk.transforms.{DoFn, ParDo}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+
 class AsyncDoFnTest extends PipelineSpec {
 
   private val inputs = Seq(1, 10, 100).map(n => 1 to n)

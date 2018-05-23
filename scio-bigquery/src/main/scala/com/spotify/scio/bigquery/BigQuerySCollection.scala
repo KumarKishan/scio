@@ -18,6 +18,10 @@
 package com.spotify.scio.bigquery
 
 import com.spotify.scio.io._
+<<<<<<< HEAD
+=======
+import com.spotify.scio.coders.Coder
+>>>>>>> 5f3acc85... Introduce static coders
 import com.google.api.services.bigquery.model.{TableReference, TableSchema}
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO.Write.{CreateDisposition, WriteDisposition}
 import org.apache.beam.sdk.io.Compression
@@ -66,9 +70,16 @@ final class BigQuerySCollection[T](@transient val self: SCollection[T]) extends 
   def saveAsTypedBigQuery(table: TableReference,
                           writeDisposition: WriteDisposition,
                           createDisposition: CreateDisposition)
+<<<<<<< HEAD
                          (implicit ct: ClassTag[T], tt: TypeTag[T], ev: T <:< HasAnnotation)
   : Future[Tap[T]] = {
     val param = BigQueryTyped.Table.WriteParam(writeDisposition, createDisposition)
+=======
+                         (implicit ct: ClassTag[T], tt: TypeTag[T], ev: T <:< HasAnnotation, coder: Coder[T])
+  : Future[Tap[T]] = {
+    val param = BigQueryTyped.Table.WriteParam(writeDisposition, createDisposition)
+    implicit val hcoder = coder.asInstanceOf[Coder[T with HasAnnotation]]
+>>>>>>> 5f3acc85... Introduce static coders
     self.asInstanceOf[SCollection[T with HasAnnotation]]
       .write(BigQueryTyped.Table[T with HasAnnotation](table))(param)
       .asInstanceOf[Future[Tap[T]]]
@@ -107,9 +118,16 @@ final class BigQuerySCollection[T](@transient val self: SCollection[T]) extends 
   def saveAsTypedBigQuery(tableSpec: String,
                           writeDisposition: WriteDisposition = null,
                           createDisposition: CreateDisposition = null)
+<<<<<<< HEAD
                          (implicit ct: ClassTag[T], tt: TypeTag[T], ev: T <:< HasAnnotation)
   : Future[Tap[T]] = {
     val param = BigQueryTyped.Table.WriteParam(writeDisposition, createDisposition)
+=======
+                         (implicit ct: ClassTag[T], tt: TypeTag[T], ev: T <:< HasAnnotation, coder: Coder[T])
+  : Future[Tap[T]] = {
+    val param = BigQueryTyped.Table.WriteParam(writeDisposition, createDisposition)
+    implicit val hcoder = coder.asInstanceOf[Coder[T with HasAnnotation]]
+>>>>>>> 5f3acc85... Introduce static coders
     self.asInstanceOf[SCollection[T with HasAnnotation]]
       .write(BigQueryTyped.Table[T with HasAnnotation](tableSpec))(param)
       .asInstanceOf[Future[Tap[T]]]

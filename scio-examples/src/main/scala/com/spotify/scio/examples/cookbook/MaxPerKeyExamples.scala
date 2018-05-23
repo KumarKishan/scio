@@ -30,6 +30,7 @@ import com.spotify.scio.examples.common.ExampleData
 
 import scala.collection.JavaConverters._
 
+
 object MaxPerKeyExamples {
   def main(cmdlineArgs: Array[String]): Unit = {
     // Create `ScioContext` and `Args`

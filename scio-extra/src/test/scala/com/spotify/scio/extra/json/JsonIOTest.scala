@@ -30,6 +30,19 @@ import org.apache.commons.io.FileUtils
 import scala.collection.JavaConverters._
 import scala.io.Source
 
+<<<<<<< HEAD:scio-extra/src/test/scala/com/spotify/scio/extra/json/JsonIOTest.scala
+=======
+
+object JsonJob {
+  def main(cmdlineArgs: Array[String]): Unit = {
+    import JsonTest._
+    val (sc, args) = ContextAndArgs(cmdlineArgs)
+    sc.jsonFile[Record](args("input"))
+      .saveAsJsonFile(args("output"))
+    sc.close()
+  }
+}
+>>>>>>> 5f3acc85... Introduce static coders:scio-extra/src/test/scala/com/spotify/scio/extra/json/JsonTest.scala
 
 object JsonIOTest {
   case class Record(i: Int, s: String, o: Option[Int])
@@ -64,6 +77,17 @@ class JsonIOTest extends ScioIOSpec with TapSpec {
     FileUtils.deleteDirectory(dir)
   }
 
+<<<<<<< HEAD:scio-extra/src/test/scala/com/spotify/scio/extra/json/JsonIOTest.scala
+=======
+  "JobTest" should "pass correct JsonIO" in {
+    JobTest[JsonJob.type]
+      .args("--input=in.json", "--output=out.json")
+      .input(JsonIO[Record]("in.json"), data)
+      .output(JsonIO[Record]("out.json"))(_ should containInAnyOrder (data))
+      .run()
+  }
+
+>>>>>>> 5f3acc85... Introduce static coders:scio-extra/src/test/scala/com/spotify/scio/extra/json/JsonTest.scala
   it should "handle invalid JSON" in {
     val badData = Seq(
       """{"i":1, "s":hello}""",

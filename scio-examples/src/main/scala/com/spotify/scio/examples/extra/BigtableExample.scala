@@ -25,6 +25,7 @@ import com.spotify.scio.bigtable._
 import com.spotify.scio.examples.common.ExampleData
 import org.joda.time.Duration
 
+
 // This depends on APIs from `scio-bigtable` and imports from `com.spotify.scio.bigtable._`.
 object BigtableExample {
 

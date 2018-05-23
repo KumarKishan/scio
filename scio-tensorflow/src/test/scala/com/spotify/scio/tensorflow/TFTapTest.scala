@@ -23,6 +23,8 @@ import com.spotify.scio.io.TapSpec
 import org.apache.commons.io.FileUtils
 import shapeless.datatype.tensorflow._
 
+
+
 class TFTapTest extends TapSpec {
 
   object TestFeatureSpec {

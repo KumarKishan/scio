@@ -18,9 +18,17 @@
 package com.spotify.scio.examples.extra
 
 import com.spotify.scio._
+<<<<<<< HEAD
 import com.spotify.scio.avro._
 import com.spotify.scio.examples.common.ExampleData
 import org.apache.avro.generic.GenericRecord
+=======
+import com.spotify.scio.coders.Coder
+import com.spotify.scio.avro._
+import com.spotify.scio.examples.common.ExampleData
+import org.apache.avro.generic.GenericRecord
+
+>>>>>>> 5f3acc85... Introduce static coders
 
 /*
  * Avro examples using shapeless-datatype to seamlessly convert between case classes and Avro
@@ -52,6 +60,7 @@ object ShapelessAvroWriteExample {
     import ShapelessAvroExample._
 
     val (sc, args) = ContextAndArgs(cmdlineArgs)
+    implicit def genericCoder = Coder.genericRecordCoder(wordCountSchema)
     sc.textFile(args.getOrElse("input", ExampleData.KING_LEAR))
       .flatMap(_.split("[^a-zA-Z']+").filter(_.nonEmpty))
       .countByValue
@@ -74,7 +83,7 @@ runMain
 object ShapelessAvroReadExample {
   def main(cmdlineArgs: Array[String]): Unit = {
     import ShapelessAvroExample._
-
+    implicit def genericCoder = Coder.genericRecordCoder(wordCountSchema)
     val (sc, args) = ContextAndArgs(cmdlineArgs)
     sc.avroFile[GenericRecord](args("input"), wordCountSchema)
       .flatMap(e => wordCountType.fromGenericRecord(e))

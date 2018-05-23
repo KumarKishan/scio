@@ -20,6 +20,10 @@ package com.spotify.scio.avro
 import com.google.protobuf.Message
 import org.apache.avro.Schema
 import com.spotify.scio.ScioContext
+<<<<<<< HEAD
+=======
+import com.spotify.scio.coders.Coder
+>>>>>>> 5f3acc85... Introduce static coders
 import com.spotify.scio.avro.types.AvroType.HasAvroAnnotation
 import com.spotify.scio.io._
 import com.spotify.scio.values._
@@ -36,7 +40,11 @@ final class AvroScioContext(@transient val self: ScioContext) extends Serializab
    * Serialized objects are stored in Avro files to leverage Avro's block file format. Note that
    * serialization is not guaranteed to be compatible across Scio releases.
    */
+<<<<<<< HEAD
   def objectFile[T: ClassTag](path: String): SCollection[T] =
+=======
+  def objectFile[T : Coder](path: String): SCollection[T] =
+>>>>>>> 5f3acc85... Introduce static coders
     self.read(ObjectFileIO[T](path))
 
   /**
@@ -44,7 +52,11 @@ final class AvroScioContext(@transient val self: ScioContext) extends Serializab
    * @param schema must be not null if `T` is of type
    *               [[org.apache.avro.generic.GenericRecord GenericRecord]].
    */
+<<<<<<< HEAD
   def avroFile[T: ClassTag](path: String, schema: Schema = null): SCollection[T] =
+=======
+  def avroFile[T: ClassTag : Coder](path: String, schema: Schema = null): SCollection[T] =
+>>>>>>> 5f3acc85... Introduce static coders
     self.read(AvroIO[T](path, schema))
 
   /**
@@ -55,7 +67,11 @@ final class AvroScioContext(@transient val self: ScioContext) extends Serializab
    * [[com.spotify.scio.avro.types.AvroType AvroType.fromPath]], or
    * [[com.spotify.scio.avro.types.AvroType AvroType.toSchema]].
    */
+<<<<<<< HEAD
   def typedAvroFile[T <: HasAvroAnnotation : ClassTag : TypeTag](path: String)
+=======
+  def typedAvroFile[T <: HasAvroAnnotation : ClassTag : TypeTag : Coder](path: String)
+>>>>>>> 5f3acc85... Introduce static coders
   : SCollection[T] =
     self.read(com.spotify.scio.io.AvroTyped.AvroIO[T](path))
 
@@ -65,7 +81,11 @@ final class AvroScioContext(@transient val self: ScioContext) extends Serializab
    * Protobuf messages are serialized into `Array[Byte]` and stored in Avro files to leverage
    * Avro's block file format.
    */
+<<<<<<< HEAD
   def protobufFile[T: ClassTag](path: String)(implicit ev: T <:< Message): SCollection[T] =
+=======
+  def protobufFile[T: ClassTag : Coder](path: String)(implicit ev: T <:< Message): SCollection[T] =
+>>>>>>> 5f3acc85... Introduce static coders
     self.read(ProtobufIO[T](path))
 
 }

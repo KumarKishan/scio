@@ -96,5 +96,4 @@ private object TFRecordMethods {
 
   def tap(read: TFRecordIO.ReadParam, path: String): Tap[Array[Byte]] =
     TFRecordFileTap(ScioUtil.addPartSuffix(path))
-
 }

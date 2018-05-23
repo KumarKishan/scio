@@ -23,6 +23,7 @@ import org.apache.beam.sdk.Pipeline
 import org.apache.beam.sdk.runners.TransformHierarchy
 import org.apache.beam.sdk.values.PCollection
 
+
 class NamedTransformTest extends PipelineSpec {
 
   "ScioContext" should "support custom transform name" in {

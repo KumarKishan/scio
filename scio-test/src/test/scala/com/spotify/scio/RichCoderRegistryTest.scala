@@ -18,6 +18,7 @@
 package com.spotify.scio
 
 import com.google.protobuf.Timestamp
+
 import com.spotify.scio.avro.AvroUtils._
 import com.spotify.scio.avro.Account
 import com.spotify.scio.coders.CoderTestUtils._

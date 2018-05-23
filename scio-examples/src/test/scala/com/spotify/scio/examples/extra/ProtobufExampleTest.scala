@@ -38,7 +38,11 @@ class ProtobufExampleTest extends PipelineSpec {
     JobTest[com.spotify.scio.examples.extra.ProtobufExample.type]
       .args("--input=in.proto", "--output=out.proto")
       .input(ProtobufIO[SimplePB]("in.proto"), input)
+<<<<<<< HEAD
       .output(ProtobufIO[TrackPB]("out.proto"))(_ should containInAnyOrder (expected))
+=======
+      .output(ProtobufIO[TrackPB]("out.proto"))(_ should containInAnyOrder[TrackPB](expected))
+>>>>>>> 5f3acc85... Introduce static coders
       .run()
   }
 

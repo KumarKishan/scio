@@ -30,7 +30,11 @@ import java.sql.{PreparedStatement, ResultSet}
 sealed trait JdbcIO[T] extends TestIO[T]
 
 object JdbcIO {
+<<<<<<< HEAD
   final def apply[T](opts: JdbcIoOptions): JdbcIO[T] = new JdbcIO[T] with TestIO[T] {
+=======
+  def apply[T](opts: JdbcIoOptions): JdbcIO[T] = new JdbcIO[T] with TestIO[T] {
+>>>>>>> 5f3acc85... Introduce static coders
     override def testId: String = s"JdbcIO(${jdbcIoId(opts)})"
   }
 
@@ -97,6 +101,10 @@ final case class JdbcWrite[T](writeOptions: JdbcWriteOptions[T]) extends ScioIO[
     throw new IllegalStateException("jdbc.Write is write-only")
 
   override def write(data: SCollection[T], params: WriteP): Future[Tap[T]] = {
+<<<<<<< HEAD
+=======
+    val connOpts = writeOptions.connectionOptions
+>>>>>>> 5f3acc85... Introduce static coders
     var transform = beam.JdbcIO.write[T]()
       .withDataSourceConfiguration(getDataSourceConfig(writeOptions.connectionOptions))
       .withStatement(writeOptions.statement)

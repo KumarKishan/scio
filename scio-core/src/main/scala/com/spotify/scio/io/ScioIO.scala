@@ -89,4 +89,8 @@ trait TestIO[T] extends ScioIO[T] {
     throw new IllegalStateException(s"$this is for testing purpose only")
 }
 
+<<<<<<< HEAD
 final case class CustomIO[T](id: String) extends TestIO[T]
+=======
+case class CustomIO[T](id: String) extends TestIO[T]
+>>>>>>> 5f3acc85... Introduce static coders

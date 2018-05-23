@@ -22,6 +22,7 @@ package com.spotify.scio.values
 
 import com.spotify.scio.testing.PipelineSpec
 
+
 class HistogramTest extends PipelineSpec {
 
   "DoubleSCollectionFunctions.histogram" should "work on empty input" in {

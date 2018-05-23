@@ -28,17 +28,29 @@ import org.apache.avro.specific.SpecificRecordBase
 import com.spotify.scio.ScioContext
 import com.spotify.scio.values._
 import com.spotify.scio.coders.AvroBytesUtil
+<<<<<<< HEAD
 import com.spotify.scio.Implicits._
 import com.spotify.scio.util.ScioUtil
+=======
+import com.spotify.scio.util.ScioUtil
+import com.spotify.scio.coders.{Coder, CoderMaterializer}
+>>>>>>> 5f3acc85... Introduce static coders
 import com.spotify.scio.avro.types.AvroType
 import com.spotify.scio.avro.types.AvroType.HasAvroAnnotation
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
+<<<<<<< HEAD
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 final case class ObjectFileIO[T: ClassTag](path: String) extends ScioIO[T] {
+=======
+import scala.reflect.{ClassTag, classTag}
+import scala.reflect.runtime.universe._
+
+final case class ObjectFileIO[T: Coder](path: String) extends ScioIO[T] {
+>>>>>>> 5f3acc85... Introduce static coders
 
   override type ReadP = Unit
   override type WriteP = ObjectFileIO.WriteParam
@@ -50,7 +62,12 @@ final case class ObjectFileIO[T: ClassTag](path: String) extends ScioIO[T] {
    * serialization is not guaranteed to be compatible across Scio releases.
    */
   override def read(sc: ScioContext, params: ReadP): SCollection[T] = {
+<<<<<<< HEAD
     val coder = sc.pipeline.getCoderRegistry.getScalaCoder[T](sc.options)
+=======
+    val coder = CoderMaterializer.beam(sc, Coder[T])
+    implicit val bcoder = Coder.genericRecordCoder(AvroBytesUtil.schema)
+>>>>>>> 5f3acc85... Introduce static coders
     AvroIO[GenericRecord](path, AvroBytesUtil.schema).read(sc, params)
       .parDo(new DoFn[GenericRecord, T] {
         @ProcessElement
@@ -67,7 +84,12 @@ final case class ObjectFileIO[T: ClassTag](path: String) extends ScioIO[T] {
    * serialization is not guaranteed to be compatible across Scio releases.
    */
   override def write(data: SCollection[T], params: WriteP): Future[Tap[T]] = {
+<<<<<<< HEAD
     val elemCoder = data.getCoder[T]
+=======
+    val elemCoder = CoderMaterializer.beam(data.context, Coder[T])
+    implicit val bcoder = Coder.genericRecordCoder(AvroBytesUtil.schema)
+>>>>>>> 5f3acc85... Introduce static coders
     val bytes = data
       .parDo(new DoFn[T, GenericRecord] {
         @ProcessElement
@@ -86,7 +108,11 @@ object ObjectFileIO {
   val WriteParam = AvroIO.WriteParam
 }
 
+<<<<<<< HEAD
 final case class ProtobufIO[T : ClassTag](path: String)
+=======
+final case class ProtobufIO[T : ClassTag : Coder](path: String)
+>>>>>>> 5f3acc85... Introduce static coders
                                          (implicit ev: T <:< Message) extends ScioIO[T] {
   override type ReadP = Unit
   override type WriteP = ProtobufIO.WriteParam
@@ -108,7 +134,11 @@ final case class ProtobufIO[T : ClassTag](path: String)
    */
   override def write(data: SCollection[T], params: WriteP): Future[Tap[T]] = {
     import me.lyh.protobuf.generic
+<<<<<<< HEAD
     val schema = generic.Schema.of[Message](data.ct.asInstanceOf[ClassTag[Message]]).toJson
+=======
+    val schema = generic.Schema.of[Message](classTag[T].asInstanceOf[ClassTag[Message]]).toJson
+>>>>>>> 5f3acc85... Introduce static coders
     val metadata = params.metadata ++ Map("protobuf.generic.schema" -> schema)
     ObjectFileIO[T](path).write(data, params.copy(metadata = metadata))
   }
@@ -121,7 +151,11 @@ object ProtobufIO {
   val WriteParam = AvroIO.WriteParam
 }
 
+<<<<<<< HEAD
 final case class AvroIO[T: ClassTag](path: String, schema: Schema = null) extends ScioIO[T] {
+=======
+final case class AvroIO[T: ClassTag : Coder](path: String, schema: Schema = null) extends ScioIO[T] {
+>>>>>>> 5f3acc85... Introduce static coders
 
   override type ReadP = Unit
   override type WriteP = AvroIO.WriteParam
@@ -183,7 +217,11 @@ object AvroIO {
 
 object AvroTyped {
 
+<<<<<<< HEAD
   final case class AvroIO[T : ClassTag : TypeTag](path: String)
+=======
+  final case class AvroIO[T : ClassTag : TypeTag : Coder](path: String)
+>>>>>>> 5f3acc85... Introduce static coders
                                                  (implicit ev: T <:< HasAvroAnnotation)
     extends ScioIO[T] {
 
@@ -234,6 +272,10 @@ object AvroTyped {
 
     override def tap(read: ReadP): Tap[T] = {
       val avroT = AvroType[T]
+<<<<<<< HEAD
+=======
+      implicit val bcoder = Coder.genericRecordCoder(avroT.schema)
+>>>>>>> 5f3acc85... Introduce static coders
       AvroTap[GenericRecord](ScioUtil.addPartSuffix(path), avroT.schema)
         .map(avroT.fromGenericRecord)
     }

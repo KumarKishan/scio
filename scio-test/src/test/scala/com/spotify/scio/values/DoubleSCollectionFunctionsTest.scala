@@ -20,6 +20,7 @@ package com.spotify.scio.values
 import com.spotify.scio.testing.PipelineSpec
 import com.spotify.scio.util.StatCounter
 
+
 class DoubleSCollectionFunctionsTest extends PipelineSpec {
 
   val ints = 1 to 100

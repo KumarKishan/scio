@@ -23,6 +23,7 @@ import java.util.UUID
 import com.spotify.scio._
 import com.spotify.scio.io._
 import com.spotify.scio.values.SCollection
+import com.spotify.scio.coders.Coder
 import org.apache.commons.io.FileUtils
 
 import scala.concurrent.Future
@@ -31,7 +32,7 @@ import scala.reflect.ClassTag
 /** Trait for unit testing [[ScioIO]]. */
 trait ScioIOSpec extends PipelineSpec {
 
-  def testTap[T: ClassTag](xs: Seq[T])
+  def testTap[T: Coder](xs: Seq[T])
                           (ioFn: String => ScioIO[T])
                           (readFn: (ScioContext, String) => SCollection[T])
                           (writeFn: (SCollection[T], String) => Future[Tap[T]])
@@ -53,7 +54,7 @@ trait ScioIOSpec extends PipelineSpec {
     FileUtils.deleteDirectory(tmpDir)
   }
 
-  def testJobTestInput[T: Coder](xs: Seq[T], in: String = "in")
+  def testJobTestInput[T: ClassTag : Coder](xs: Seq[T], in: String = "in")
                                    (ioFn: String => ScioIO[T])
                                    (readFn: (ScioContext, String) => SCollection[T]): Unit = {
     def runMain(args: Array[String]): Unit = {

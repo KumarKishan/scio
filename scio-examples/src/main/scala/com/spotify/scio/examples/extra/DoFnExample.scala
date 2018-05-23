@@ -29,6 +29,7 @@ import com.spotify.scio.examples.common.ExampleData
 import org.apache.beam.sdk.transforms.DoFn._
 import org.apache.beam.sdk.transforms.{DoFn, ParDo}
 
+
 object DoFnExample {
   def main(cmdlineArgs: Array[String]): Unit = {
     val (sc, args) = ContextAndArgs(cmdlineArgs)

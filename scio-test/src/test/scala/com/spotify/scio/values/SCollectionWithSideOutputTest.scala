@@ -19,6 +19,7 @@ package com.spotify.scio.values
 
 import com.spotify.scio.testing.PipelineSpec
 
+
 class SCollectionWithSideOutputTest extends PipelineSpec {
 
   "SCollectionWithSideOutput" should "support map()" in {

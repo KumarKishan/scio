@@ -29,6 +29,7 @@ import com.spotify.scio._
 import com.spotify.scio.examples.common.ExampleData
 import org.joda.time.Instant
 
+
 object DistCacheExample {
   def main(cmdlineArgs: Array[String]): Unit = {
     val (sc, args) = ContextAndArgs(cmdlineArgs)

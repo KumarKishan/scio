@@ -23,6 +23,7 @@ import org.scalatest._
 
 import scala.io.Source
 
+
 class SerializationTest extends FlatSpec with Matchers {
 
   "Args" should "be serializable" in {

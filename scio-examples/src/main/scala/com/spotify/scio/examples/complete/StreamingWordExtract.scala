@@ -26,6 +26,7 @@ import org.apache.beam.sdk.options.StreamingOptions
 
 import scala.collection.JavaConverters._
 
+
 /*
 SBT
 runMain

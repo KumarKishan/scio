@@ -22,6 +22,10 @@ import scala.concurrent.Future
 import com.spotify.scio.io.{Tap, Taps, FileStorage}
 import com.google.api.services.bigquery.model.TableReference
 import com.spotify.scio.ScioContext
+<<<<<<< HEAD
+=======
+import com.spotify.scio.coders.Coder
+>>>>>>> 5f3acc85... Introduce static coders
 import com.spotify.scio.values.SCollection
 
 import scala.reflect.ClassTag
@@ -67,7 +71,11 @@ final case class BigQueryTaps(self: Taps) {
     bigQueryTable(BigQueryHelpers.parseTableSpec(tableSpec))
 
   /** Get a `Future[Tap[T]]` for typed BigQuery source. */
+<<<<<<< HEAD
   def typedBigQuery[T <: HasAnnotation : TypeTag : ClassTag](newSource: String = null)
+=======
+  def typedBigQuery[T <: HasAnnotation : TypeTag : ClassTag : Coder](newSource: String = null)
+>>>>>>> 5f3acc85... Introduce static coders
   : Future[Tap[T]] = {
     val bqt = BigQueryType[T]
     lazy val table = scala.util.Try(BigQueryHelpers.parseTableSpec(newSource)).toOption

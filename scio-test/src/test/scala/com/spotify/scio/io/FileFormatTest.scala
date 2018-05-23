@@ -24,6 +24,7 @@ import com.spotify.scio.ScioContext
 import com.spotify.scio.avro._
 import com.spotify.scio.testing.PipelineSpec
 
+
 class FileFormatTest extends PipelineSpec {
 
   // Legacy files generated with 0.3.0-beta1, the last release before the

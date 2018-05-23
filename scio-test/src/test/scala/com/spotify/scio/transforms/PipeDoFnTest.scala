@@ -23,6 +23,7 @@ import com.google.common.base.Charsets
 import com.google.common.io.{Files => GFiles}
 import com.spotify.scio.testing._
 
+
 class PipeDoFnTest extends PipelineSpec {
 
   private val input = Seq("a", "b", "c")

@@ -28,6 +28,7 @@ import com.spotify.scio._
 import com.spotify.scio.examples.common.ExampleData
 import org.slf4j.LoggerFactory
 
+
 object WordCount {
 
   // Logger is an object instance, i.e. statically initialized and thus can be used safely in an

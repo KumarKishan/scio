@@ -29,6 +29,7 @@ import com.spotify.scio._
 import com.spotify.scio.bigquery._
 import com.spotify.scio.examples.common.ExampleData
 
+
 import scala.util.Try
 
 object UserScore {

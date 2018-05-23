@@ -21,6 +21,10 @@ import java.sql.{Driver, PreparedStatement, ResultSet}
 
 import com.spotify.scio.io.Tap
 import com.spotify.scio.values.SCollection
+<<<<<<< HEAD
+=======
+import com.spotify.scio.coders.Coder
+>>>>>>> 5f3acc85... Introduce static coders
 import org.apache.beam.sdk.io.{jdbc => beam}
 
 import scala.concurrent.Future
@@ -46,10 +50,17 @@ package object jdbc {
     * @param connectionUrl connection url, i.e "jdbc:mysql://[host]:[port]/db?"
     * @param driverClass   subclass of [[java.sql.Driver]]
     */
+<<<<<<< HEAD
   final case class JdbcConnectionOptions(username: String,
                                          password: Option[String],
                                          connectionUrl: String,
                                          driverClass: Class[_ <: Driver])
+=======
+  case class JdbcConnectionOptions(username: String,
+                                   password: Option[String],
+                                   connectionUrl: String,
+                                   driverClass: Class[_ <: Driver])
+>>>>>>> 5f3acc85... Introduce static coders
 
   sealed trait JdbcIoOptions
 
@@ -62,12 +73,20 @@ package object jdbc {
     * @param rowMapper           function to map from a SQL [[java.sql.ResultSet]] to `T`
     * @param fetchSize           use apache beam default fetch size if the value is -1
     */
+<<<<<<< HEAD
   final case class JdbcReadOptions[T](connectionOptions: JdbcConnectionOptions,
                                       query: String,
                                       statementPreparator: PreparedStatement => Unit = null,
                                       rowMapper: ResultSet => T,
                                       fetchSize: Int = USE_BEAM_DEFAULT_FETCH_SIZE)
     extends JdbcIoOptions
+=======
+  case class JdbcReadOptions[T](connectionOptions: JdbcConnectionOptions,
+                                query: String,
+                                statementPreparator: PreparedStatement => Unit = null,
+                                rowMapper: ResultSet => T,
+                                fetchSize: Int = USE_BEAM_DEFAULT_FETCH_SIZE) extends JdbcIoOptions
+>>>>>>> 5f3acc85... Introduce static coders
 
   /**
     * Options for writing to a JDBC source.
@@ -77,22 +96,38 @@ package object jdbc {
     * @param preparedStatementSetter function to set values in a [[java.sql.PreparedStatement]]
     * @param batchSize               use apache beam default batch size if the value is -1
     */
+<<<<<<< HEAD
   final case class JdbcWriteOptions[T](
     connectionOptions: JdbcConnectionOptions,
     statement: String,
     preparedStatementSetter: (T, PreparedStatement) => Unit = null,
     batchSize: Long = USE_BEAM_DEFAULT_BATCH_SIZE)
+=======
+  case class JdbcWriteOptions[T](connectionOptions: JdbcConnectionOptions,
+                                 statement: String,
+                                 preparedStatementSetter: (T, PreparedStatement) => Unit = null,
+                                 batchSize: Long = USE_BEAM_DEFAULT_BATCH_SIZE)
+>>>>>>> 5f3acc85... Introduce static coders
     extends JdbcIoOptions
 
   private[jdbc] def getDataSourceConfig(opts: jdbc.JdbcConnectionOptions)
   : beam.JdbcIO.DataSourceConfiguration = {
     opts.password match {
+<<<<<<< HEAD
       case Some(pass) =>
+=======
+      case Some(pass) => {
+>>>>>>> 5f3acc85... Introduce static coders
         beam.JdbcIO.DataSourceConfiguration
           .create(opts.driverClass.getCanonicalName, opts.connectionUrl)
           .withUsername(opts.username)
           .withPassword(pass)
+<<<<<<< HEAD
       case None =>
+=======
+      }
+      case None => {
+>>>>>>> 5f3acc85... Introduce static coders
         beam.JdbcIO.DataSourceConfiguration
           .create(opts.driverClass.getCanonicalName, opts.connectionUrl)
           .withUsername(opts.username)
@@ -102,14 +137,22 @@ package object jdbc {
   /** Enhanced version of [[ScioContext]] with JDBC methods. */
   implicit class JdbcScioContext(@transient val self: ScioContext) extends Serializable {
     /** Get an SCollection for a JDBC query. */
+<<<<<<< HEAD
     def jdbcSelect[T: ClassTag](readOptions: JdbcReadOptions[T]): SCollection[T] =
+=======
+    def jdbcSelect[T: ClassTag : Coder](readOptions: JdbcReadOptions[T]): SCollection[T] =
+>>>>>>> 5f3acc85... Introduce static coders
       self.read(JdbcSelect(readOptions))
   }
 
   /** Enhanced version of [[com.spotify.scio.values.SCollection SCollection]] with JDBC methods. */
   implicit class JdbcSCollection[T](val self: SCollection[T]) {
     /** Save this SCollection as a JDBC database. */
+<<<<<<< HEAD
     def saveAsJdbc(writeOptions: JdbcWriteOptions[T]): Future[Tap[T]] =
+=======
+    def saveAsJdbc(writeOptions: JdbcWriteOptions[T])(implicit coder: Coder[T]): Future[Tap[T]] =
+>>>>>>> 5f3acc85... Introduce static coders
       self.write(JdbcWrite(writeOptions))
   }
 

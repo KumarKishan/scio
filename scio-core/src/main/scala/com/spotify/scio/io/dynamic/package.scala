@@ -18,6 +18,7 @@
 package com.spotify.scio.io
 
 import com.spotify.scio.values.SCollection
+
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.beam.sdk.{io => beam}
@@ -25,6 +26,7 @@ import org.apache.beam.sdk.io.FileBasedSink.DynamicDestinations
 import org.apache.beam.sdk.io.{AvroIO, DynamicAvroDestinations, FileSystems}
 
 import scala.concurrent.Future
+import scala.reflect.ClassTag
 
 /**
  * IO package for dynamic destinations. Import All.
@@ -70,14 +72,14 @@ package object dynamic {
      * [[org.apache.beam.sdk.io.DynamicAvroDestinations DynamicAvroDestinations]].
      */
     def saveAsAvroFile(destinations: DynamicAvroDestinations[T, _, T], schema: Schema,
-                       windowedWrites: Boolean, numShards: Int)
+                       windowedWrites: Boolean, numShards: Int)(implicit ct: ClassTag[T])
     : Future[Tap[T]] = {
       if (self.context.isTest) {
         throw new NotImplementedError(
           "Avro file with dynamic destinations cannot be used in a test context")
       } else {
         val tempDir = FileSystems.matchNewResource(self.context.options.getTempLocation, true)
-        val cls = self.ct.runtimeClass.asInstanceOf[Class[T]]
+        val cls = ct.runtimeClass.asInstanceOf[Class[T]]
         val t = if (classOf[SpecificRecordBase] isAssignableFrom cls) {
           AvroIO.write(cls)
         } else {
@@ -100,7 +102,7 @@ package object dynamic {
     def saveAsAvroFile(fileDestination: FileDestinations,
                        schema: Schema = null,
                        suffix: String = ".avro")
-                      (destinationFn: T => String): Future[Tap[T]] = {
+                      (destinationFn: T => String)(implicit ct: ClassTag[T]): Future[Tap[T]] = {
       val destinations = DynamicDestinationsUtil.avroFn(
         fileDestination, suffix, destinationFn, schema)
       saveAsAvroFile(
@@ -112,9 +114,9 @@ package object dynamic {
      * [[org.apache.beam.sdk.io.FileBasedSink.DynamicDestinations DynamicDestinations]].
      */
     def saveAsTextFile(destinations: DynamicDestinations[String, _, String],
-                       windowedWrites: Boolean, numShards: Int)
+                       windowedWrites: Boolean, numShards: Int)(implicit ct: ClassTag[T])
     : Future[Tap[String]] = {
-      val s = if (classOf[String] isAssignableFrom self.ct.runtimeClass) {
+      val s = if (classOf[String] isAssignableFrom ct.runtimeClass) {
         self.asInstanceOf[SCollection[String]]
       } else {
         self.map(_.toString)
@@ -139,7 +141,8 @@ package object dynamic {
      * Save this SCollection as text files specified by the destination function.
      */
     def saveAsTextFile(fileDestination: FileDestinations, suffix: String = ".txt")
-                      (destinationFn: String => String): Future[Tap[String]] = {
+                      (destinationFn: String => String)
+                      (implicit ct: ClassTag[T]): Future[Tap[String]] = {
       val destinations = DynamicDestinationsUtil.fileFn(fileDestination, suffix, destinationFn)
       saveAsTextFile(destinations, fileDestination.windowedWrites, fileDestination.numShards)
     }

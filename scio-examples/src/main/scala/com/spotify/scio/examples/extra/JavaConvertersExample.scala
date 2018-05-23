@@ -22,6 +22,7 @@ import com.spotify.scio.JavaConverters._
 import org.apache.beam.sdk.io.TextIO
 import org.apache.beam.sdk.options.ValueProvider.StaticValueProvider
 
+
 object JavaConvertersExample {
   def main(cmdlineArgs: Array[String]): Unit = {
     val (sc, args) = ContextAndArgs(cmdlineArgs)

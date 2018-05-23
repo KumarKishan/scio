@@ -22,6 +22,10 @@ import com.spotify.scio.ContextAndArgs
 import com.spotify.scio.proto.SimpleV2.SimplePB
 import com.spotify.scio.proto.Track.TrackPB
 import com.spotify.scio.avro._
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5f3acc85... Introduce static coders
 
 // Read protobuf on input, and write another protobuf on output
 object ProtobufExample {

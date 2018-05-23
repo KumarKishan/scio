@@ -22,6 +22,8 @@ import com.spotify.scio.values.SCollection
 import org.apache.beam.sdk.io.Compression
 import org.tensorflow.example.Example
 
+
+
 class TFScioContextFunctions(val self: ScioContext) extends AnyVal {
 
   /**

@@ -20,6 +20,10 @@ package com.spotify.scio.examples.extra
 
 import com.spotify.scio._
 import com.spotify.scio.avro._
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5f3acc85... Introduce static coders
 
 object AvroInOut {
   def main(cmdlineArgs: Array[String]): Unit = {

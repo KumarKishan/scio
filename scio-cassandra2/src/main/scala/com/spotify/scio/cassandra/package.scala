@@ -19,6 +19,7 @@ package com.spotify.scio
 
 import com.spotify.scio.io.Tap
 import com.spotify.scio.values.SCollection
+import com.spotify.scio.coders.Coder
 
 import scala.concurrent.Future
 
@@ -58,7 +59,11 @@ package object cassandra {
      * @param f function to convert input data to values for the CQL statement
      */
     def saveAsCassandra(opts: CassandraOptions, parallelism: Int = 0)
+<<<<<<< HEAD
                        (f: T => Seq[Any]): Future[Tap[T]] =
+=======
+                       (f: T => Seq[Any])(implicit coder: Coder[T]): Future[Tap[T]] =
+>>>>>>> 5f3acc85... Introduce static coders
       self.write(CassandraIO[T](opts, parallelism))(CassandraIO.WriteParam(f))
     }
 }

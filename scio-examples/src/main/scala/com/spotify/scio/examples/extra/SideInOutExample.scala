@@ -34,6 +34,7 @@ import com.spotify.scio._
 import com.spotify.scio.examples.common.ExampleData
 import com.spotify.scio.values.SideOutput
 
+
 object SideInOutExample {
   def main(cmdlineArgs: Array[String]): Unit = {
     val (sc, args) = ContextAndArgs(cmdlineArgs)
@@ -45,7 +46,7 @@ object SideInOutExample {
     }
 
     // Convert stop words to a `SideInput[Map[String, Unit]]`
-    val sideIn = stopWords.map(_ -> Unit).asMapSideInput
+    val sideIn = stopWords.map(_ -> ()).asMapSideInput
 
     // Open text files a `SCollection[String]`
     val wordCount = sc.textFile(args.getOrElse("input", ExampleData.KING_LEAR))

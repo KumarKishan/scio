@@ -24,6 +24,7 @@ import com.google.common.collect.Lists
 import com.spotify.scio.io.TextIO
 import com.spotify.scio.metrics.Metrics
 import com.spotify.scio.options.ScioOptions
+
 import com.spotify.scio.testing.{PipelineSpec, TestValidationOptions}
 import com.spotify.scio.util.ScioUtil
 import org.apache.beam.runners.direct.DirectRunner

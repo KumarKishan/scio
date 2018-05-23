@@ -27,6 +27,7 @@ import com.spotify.scio.bigquery._
 import com.spotify.scio._
 import com.spotify.scio.examples.common.ExampleData
 
+
 // ## Utilities used in all examples
 object JoinUtil {
 

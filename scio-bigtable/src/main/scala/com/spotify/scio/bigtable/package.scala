@@ -17,6 +17,7 @@
 
 package com.spotify.scio
 
+
 import com.google.bigtable.v2._
 import com.google.cloud.bigtable.config.BigtableOptions
 import com.google.protobuf.ByteString

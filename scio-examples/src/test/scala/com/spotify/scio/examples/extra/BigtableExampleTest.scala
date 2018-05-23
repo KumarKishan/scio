@@ -59,7 +59,11 @@ class BigtableExampleTest extends PipelineSpec {
   "BigtableReadExample" should "work" in {
     JobTest[com.spotify.scio.examples.extra.BigtableReadExample.type]
       .args(bigtableOptions :+ "--output=out.txt": _*)
+<<<<<<< HEAD
       .input(BigtableIO("my-project", "my-instance", "my-table"), rowsIn)
+=======
+      .input(BigtableIO[Row]("my-project", "my-instance", "my-table"), rowsIn)
+>>>>>>> 5f3acc85... Introduce static coders
       .output(TextIO("out.txt"))(_ should containInAnyOrder (expectedText))
       .run()
   }

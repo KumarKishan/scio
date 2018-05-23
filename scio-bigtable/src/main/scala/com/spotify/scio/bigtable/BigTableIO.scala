@@ -35,9 +35,15 @@ import scala.concurrent.Future
 sealed trait BigtableIO[T] extends ScioIO[T]
 
 object BigtableIO {
+<<<<<<< HEAD
   final def apply[T](projectId: String,
                      instanceId: String,
                      tableId: String): BigtableIO[T] = new BigtableIO[T] with TestIO[T] {
+=======
+  def apply[T](projectId: String,
+               instanceId: String,
+               tableId: String): BigtableIO[T] = new BigtableIO[T] with TestIO[T] {
+>>>>>>> 5f3acc85... Introduce static coders
     override def testId: String = s"BigtableIO($projectId\t$instanceId\t$tableId)"
   }
 }
@@ -84,9 +90,15 @@ object BigtableRead {
     keyRange: ByteKeyRange = null,
     rowFilter: RowFilter = null)
 
+<<<<<<< HEAD
   final def apply(projectId: String,
                   instanceId: String,
                   tableId: String): BigtableRead = {
+=======
+  def apply(projectId: String,
+            instanceId: String,
+            tableId: String): BigtableRead = {
+>>>>>>> 5f3acc85... Introduce static coders
     val bigtableOptions = new BigtableOptions.Builder()
       .setProjectId(projectId)
       .setInstanceId(instanceId)
@@ -127,9 +139,13 @@ final case class BigtableWrite[T](bigtableOptions: BigtableOptions, tableId: Str
           new BigtableBulkWriter(tableId, bigtableOptions, numOfShards, flushInterval)
       }
     data
+<<<<<<< HEAD
       .map {
         case (key, value) => KV.of(key, value.asJava.asInstanceOf[java.lang.Iterable[Mutation]])
       }
+=======
+      .map(kv => KV.of(kv._1, kv._2.asJava.asInstanceOf[java.lang.Iterable[Mutation]]))
+>>>>>>> 5f3acc85... Introduce static coders
       .applyInternal(sink)
     Future.failed(new NotImplementedError("Bigtable future not implemented"))
   }
@@ -145,7 +161,11 @@ object BigtableWrite {
     numOfShards: Int,
     flushInterval: Duration = Duration.standardSeconds(1)) extends WriteParam
 
+<<<<<<< HEAD
   final def apply[T](projectId: String,
+=======
+  def apply[T](projectId: String,
+>>>>>>> 5f3acc85... Introduce static coders
                instanceId: String,
                tableId: String)(implicit ev: T <:< Mutation): BigtableWrite[T] = {
       val bigtableOptions = new BigtableOptions.Builder()

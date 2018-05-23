@@ -21,7 +21,12 @@ import com.spotify.scio.ScioContext
 import com.spotify.scio.io.{ScioIO, Tap, TextIO}
 import com.spotify.scio.util.ScioUtil
 import com.spotify.scio.values.SCollection
+<<<<<<< HEAD
 import io.circe.{Printer}
+=======
+import com.spotify.scio.coders.Coder
+import io.circe.Printer
+>>>>>>> 5f3acc85... Introduce static coders
 import io.circe.parser._
 import io.circe.syntax._
 import org.apache.beam.sdk.{io => beam}
@@ -30,7 +35,11 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.{Left, Right}
 
+<<<<<<< HEAD
 final case class JsonIO[T: ClassTag : Encoder : Decoder](path: String) extends ScioIO[T] {
+=======
+final case class JsonIO[T: ClassTag : Encoder : Decoder : Coder](path: String) extends ScioIO[T] {
+>>>>>>> 5f3acc85... Introduce static coders
 
   override type ReadP = Unit
   override type WriteP = JsonIO.WriteParam

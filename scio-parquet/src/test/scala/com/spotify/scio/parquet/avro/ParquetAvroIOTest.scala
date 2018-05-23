@@ -17,10 +17,12 @@
 
 package com.spotify.scio.parquet.avro
 
+import java.nio.channels.{Channels, SeekableByteChannel}
+import java.nio.file.Files
+
 import com.spotify.scio._
 import com.spotify.scio.avro._
 import com.spotify.scio.io.TapSpec
-import com.spotify.scio.testing._
 import org.apache.avro.generic.GenericRecord
 import org.apache.commons.io.FileUtils
 import org.scalatest._
@@ -105,6 +107,7 @@ class ParquetAvroIOTest extends ScioIOSpec with TapSpec with BeforeAndAfterAll {
 
     val genericRecords = (1 to 100).map(AvroUtils.newGenericRecord)
     val sc = ScioContext()
+    implicit val coder = Coder.genericRecordCoder(AvroUtils.schema)
     sc.parallelize(genericRecords)
       .saveAsParquetAvroFile(dir.toString, numShards = 1, schema = AvroUtils.schema)
     sc.close()
@@ -120,4 +123,13 @@ class ParquetAvroIOTest extends ScioIOSpec with TapSpec with BeforeAndAfterAll {
     FileUtils.deleteDirectory(dir)
   }
 
+}
+
+private class BeamParquetInputFile(var channel: SeekableByteChannel) extends InputFile {
+  override def getLength: Long = channel.size
+  override def newStream: SeekableInputStream =
+    new DelegatingSeekableInputStream(Channels.newInputStream(channel)) {
+      override def getPos: Long = channel.position
+      override def seek(newPos: Long): Unit = channel.position(newPos)
+    }
 }

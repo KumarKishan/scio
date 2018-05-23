@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 
+
 object DebuggingWordCount {
 
   // Logger is an object instance, i.e. statically initialized and thus can be used safely in an

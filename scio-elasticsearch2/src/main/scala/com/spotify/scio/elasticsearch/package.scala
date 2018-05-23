@@ -21,6 +21,7 @@ import java.net.InetSocketAddress
 
 import com.spotify.scio.io.Tap
 import com.spotify.scio.values.SCollection
+import com.spotify.scio.coders.Coder
 import org.apache.beam.sdk.io.elasticsearch.ElasticsearchIO.Write.BulkExecutionException
 import org.elasticsearch.action.ActionRequest
 import org.joda.time.Duration
@@ -36,7 +37,11 @@ import scala.concurrent.Future
  */
 package object elasticsearch {
 
+<<<<<<< HEAD
   final case class ElasticsearchOptions(clusterName: String, servers: Seq[InetSocketAddress])
+=======
+  case class ElasticsearchOptions(clusterName: String, servers: Seq[InetSocketAddress])
+>>>>>>> 5f3acc85... Introduce static coders
 
   implicit class ElasticsearchSCollection[T](val self: SCollection[T]) extends AnyVal {
 
@@ -55,7 +60,12 @@ package object elasticsearch {
                             numOfShards: Long = 0,
                             maxBulkRequestSize: Int = 3000,
                             errorFn: BulkExecutionException => Unit = m => throw m)
+<<<<<<< HEAD
                            (f: T => Iterable[ActionRequest[_]]): Future[Tap[T]] = {
+=======
+                           (f: T => Iterable[ActionRequest[_]])
+                           (implicit coder: Coder[T]): Future[Tap[T]] = {
+>>>>>>> 5f3acc85... Introduce static coders
       val io = ElasticsearchIO[T](esOptions)
       val param = ElasticsearchIO.WriteParam(
         f, errorFn, flushInterval, numOfShards, maxBulkRequestSize)

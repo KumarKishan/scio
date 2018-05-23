@@ -26,6 +26,7 @@ import org.apache.beam.sdk.testing.CombineFnTester
 import org.apache.beam.sdk.transforms.Combine.CombineFn
 import org.openjdk.jmh.annotations._
 
+
 import scala.collection.JavaConverters._
 
 @BenchmarkMode(Array(Mode.AverageTime))

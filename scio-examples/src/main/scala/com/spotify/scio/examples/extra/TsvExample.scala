@@ -20,6 +20,10 @@ package com.spotify.scio.examples.extra
 import com.spotify.scio._
 import com.spotify.scio.examples.common.ExampleData
 import org.apache.beam.sdk.{io => beam}
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5f3acc85... Introduce static coders
 
 // Example: Word Count Example writing to TSV file
 // Usage:

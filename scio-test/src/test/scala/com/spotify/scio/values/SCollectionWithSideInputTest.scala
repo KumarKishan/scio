@@ -21,6 +21,7 @@ import com.spotify.scio.testing.PipelineSpec
 import org.apache.beam.sdk.transforms.View
 import org.joda.time.{DateTimeConstants, Duration, Instant}
 
+
 class SCollectionWithSideInputTest extends PipelineSpec {
 
   val sideData = Seq(("a", 1), ("b", 2), ("c", 3))

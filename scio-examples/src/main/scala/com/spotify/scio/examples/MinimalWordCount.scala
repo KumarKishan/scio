@@ -27,6 +27,7 @@ package com.spotify.scio.examples
 import com.spotify.scio._
 import com.spotify.scio.examples.common.ExampleData
 
+
 object MinimalWordCount {
   def main(cmdlineArgs: Array[String]): Unit = {
     // Parse command line arguments, create `ScioContext` and `Args`.
