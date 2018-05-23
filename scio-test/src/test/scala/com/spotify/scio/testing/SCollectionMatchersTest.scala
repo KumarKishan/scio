@@ -28,6 +28,7 @@ import org.apache.beam.sdk.transforms.windowing.{
 import org.apache.beam.sdk.values.TimestampedValue
 import org.joda.time.{Duration, Instant}
 
+
 // scalastyle:off no.whitespace.before.left.bracket
 class SCollectionMatchersTest extends PipelineSpec {
 

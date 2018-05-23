@@ -20,6 +20,7 @@ package com.spotify.scio.examples.extra
 import com.spotify.scio.ContextAndArgs
 import com.spotify.scio.extra.checkpoint._
 
+
 object CheckpointExample {
   def main(cmdlineArgs: Array[String]): Unit = {
     val (sc, args) = ContextAndArgs(cmdlineArgs)

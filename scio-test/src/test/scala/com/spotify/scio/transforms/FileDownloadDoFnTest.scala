@@ -25,6 +25,7 @@ import com.spotify.scio.testing._
 
 import scala.collection.JavaConverters._
 
+
 class FileDownloadDoFnTest extends PipelineSpec {
 
   "FileDownloadDoFn" should "work" in {

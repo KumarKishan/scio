@@ -17,18 +17,19 @@
 
 package com.spotify.scio.testing
 
-import com.google.api.services.bigquery.model.TableRow
-import com.google.datastore.v1.{Entity, Query}
 import com.spotify.scio.ScioResult
+import com.spotify.scio.io.ScioIO
 import com.spotify.scio.values.SCollection
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.{Set => MSet}
 
 /* Inputs are Scala Iterables to be parallelized for TestPipeline */
-private[scio] class TestInput(val m: Map[TestIO[_], Iterable[_]]) {
-  val s: MSet[TestIO[_]] = MSet.empty
-  def apply[T](key: TestIO[T]): Iterable[T] = {
+private[scio] class TestInput(val m: Map[String, Iterable[_]]) {
+  val s: MSet[String] = MSet.empty
+
+  def apply[T](io: ScioIO[T]): Iterable[T] = {
+    val key = io.testId
     require(
       m.contains(key),
       s"Missing test input: $key, available: ${m.keys.mkString("[", ", ", "]")}")
@@ -38,6 +39,7 @@ private[scio] class TestInput(val m: Map[TestIO[_], Iterable[_]]) {
     s.add(key)
     m(key).asInstanceOf[Iterable[T]]
   }
+
   def validate(): Unit = {
     val d = m.keySet -- s
     require(d.isEmpty, "Unmatched test input: " + d.mkString(", "))
@@ -45,23 +47,22 @@ private[scio] class TestInput(val m: Map[TestIO[_], Iterable[_]]) {
 }
 
 /* Outputs are lambdas that apply assertions on SCollections */
-private[scio] class TestOutput(val m: Map[TestIO[_], SCollection[_] => Unit]) {
-  val s: MSet[TestIO[_]] = MSet.empty
-  def apply[T](key: TestIO[T]): SCollection[T] => Unit = {
-    if (key.key.contains("scio-materialize-")) {
-      // dummy matcher for materialize output
-      _ => Unit
-    } else {
-      require(
-        m.contains(key),
-        s"Missing test output: $key, available: ${m.keys.mkString("[", ", ", "]")}")
-      require(!s.contains(key),
-        s"There already exists test output for $key, currently " +
-          s"registered outputs: ${s.mkString("[", ", ", "]")}")
-      s.add(key)
-      m(key)
-    }
+private[scio] class TestOutput(val m: Map[String, SCollection[_] => Unit]) {
+  val s: MSet[String] = MSet.empty
+
+  def apply[T](io: ScioIO[T]): SCollection[T] => Unit = {
+    // TODO: support Materialize outputs, maybe Materialized[T]?
+    val key = io.testId
+    require(
+      m.contains(key),
+      s"Missing test output: $key, available: ${m.keys.mkString("[", ", ", "]")}")
+    require(!s.contains(key),
+      s"There already exists test output for $key, currently " +
+        s"registered outputs: ${s.mkString("[", ", ", "]")}")
+    s.add(key)
+    m(key)
   }
+
   def validate(): Unit = {
     val d = m.keySet -- s
     require(d.isEmpty, "Unmatched test output: " + d.mkString(", "))
@@ -96,14 +97,18 @@ private[scio] object TestDataManager {
     m(key)
   }
 
-  def getInput(testId: String): TestInput = getValue(testId, inputs, "reading input")
-  def getOutput(testId: String): TestOutput = getValue(testId, outputs, "writing output")
+  def getInput(testId: String)
+  : TestInput = getValue(testId, inputs, "reading input")
+
+  def getOutput(testId: String)
+  : TestOutput = getValue(testId, outputs, "writing output")
+
   def getDistCache(testId: String): TestDistCache =
     getValue(testId, distCaches, "using dist cache")
 
   def setup(testId: String,
-            ins: Map[TestIO[_], Iterable[_]],
-            outs: Map[TestIO[_], SCollection[_] => Unit],
+            ins: Map[String, Iterable[_]],
+            outs: Map[String, SCollection[_] => Unit],
             dcs: Map[DistCacheIO[_], _]): Unit = {
     inputs += (testId -> new TestInput(ins))
     outputs += (testId -> new TestOutput(outs))
@@ -111,8 +116,8 @@ private[scio] object TestDataManager {
   }
 
   def tearDown(testId: String, f: ScioResult => Unit = _ => Unit): Unit = {
-    inputs.remove(testId).get.validate()
-    outputs.remove(testId).get.validate()
+    inputs.remove(testId).foreach(_.validate())
+    outputs.remove(testId).foreach(_.validate())
     distCaches.remove(testId).get.validate()
     ensureClosed(testId)
     val result = results.remove(testId).get
@@ -132,34 +137,8 @@ private[scio] object TestDataManager {
 
 }
 
-/* For matching IO types */
-
-class TestIO[+T] private[scio] (val key: String) {
-  require(key != null, s"$this has null key")
-  require(!key.isEmpty, s"$this has empty string key")
-}
-
-case class ObjectFileIO[T](path: String) extends TestIO[T](path)
-
-case class AvroIO[T](path: String) extends TestIO[T](path)
-
-case class BigQueryIO[T](tableSpecOrQuery: String) extends TestIO[T](tableSpecOrQuery)
-
-case class DatastoreIO(projectId: String, query: Query = null, namespace: String = null)
-  extends TestIO[Entity](projectId)
-
-case class ProtobufIO[T](path: String) extends TestIO[T](path)
-
-case class PubsubIO[T](topic: String) extends TestIO[T](topic)
-
-case class TableRowJsonIO(path: String) extends TestIO[TableRow](path)
-
-case class TextIO(path: String) extends TestIO[String](path)
-
 case class DistCacheIO[T](uri: String)
 
 object DistCacheIO {
   def apply[T](uris: Seq[String]): DistCacheIO[T] = DistCacheIO(uris.mkString("\t"))
 }
-
-case class CustomIO[T](name: String) extends TestIO[T](name)

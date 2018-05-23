@@ -21,6 +21,7 @@ import com.spotify.scio.ContextAndArgs
 import com.spotify.scio.examples.common.ExampleData
 import org.apache.beam.sdk.io.Compression
 
+
 object SingleGZipFileExample {
   def main(cmdlineArgs: Array[String]): Unit = {
     // Parse command line arguments, create `ScioContext` and `Args`.

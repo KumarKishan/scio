@@ -37,6 +37,7 @@ import org.apache.beam.sdk.transforms.windowing.IntervalWindow
 import org.joda.time.{DateTimeZone, Duration, Instant}
 import org.joda.time.format.DateTimeFormat
 
+
 object HourlyTeamScore {
 
   // The schema for the BigQuery table to write output to is defined as an annotated case class

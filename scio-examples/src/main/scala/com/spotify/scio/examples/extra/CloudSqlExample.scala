@@ -21,6 +21,7 @@ package com.spotify.scio.examples.extra
 import com.spotify.scio.ScioContext
 import com.spotify.scio.jdbc._
 
+
 // Read from Google Cloud SQL database table and write to a different table in the same database
 object CloudSqlExample {
 

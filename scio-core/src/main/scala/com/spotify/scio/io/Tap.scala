@@ -19,17 +19,16 @@ package com.spotify.scio.io
 
 import java.util.UUID
 
-import com.google.api.services.bigquery.model.TableReference
 import com.spotify.scio.ScioContext
-import com.spotify.scio.bigquery.{BigQueryClient, TableRow}
 import com.spotify.scio.coders.AvroBytesUtil
 import com.spotify.scio.util.ScioUtil
+import com.spotify.scio.coders.{Coder, CoderMaterializer}
 import com.spotify.scio.values.SCollection
-import com.twitter.chill.Externalizer
-import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
-
-import scala.reflect.ClassTag
+import org.apache.beam.sdk.io.AvroIO
+import org.apache.beam.sdk.transforms.DoFn
+import org.apache.beam.sdk.transforms.DoFn.ProcessElement
+import org.apache.beam.sdk.coders.{Coder => BCoder}
 
 /**
  * Placeholder to an external data set that can either be load into memory as an iterator or
@@ -47,7 +46,7 @@ trait Tap[T] extends Serializable { self =>
   def open(sc: ScioContext): SCollection[T]
 
   /** Map items from `T` to `U`. */
-  def map[U: ClassTag](f: T => U): Tap[U] = new Tap[U] {
+  def map[U: Coder](f: T => U): Tap[U] = new Tap[U] {
 
     /** Parent of this Tap before [[map]]. */
     override val parent: Option[Tap[_]] = Option(self)
@@ -67,49 +66,38 @@ case class TextTap(path: String) extends Tap[String] {
   override def open(sc: ScioContext): SCollection[String] = sc.textFile(path)
 }
 
-/**
- * Tap for Avro files on local file system or GCS.
- * @param schema must be not null if `T` is of type
- *               [[org.apache.avro.generic.GenericRecord GenericRecord]].
- */
-case class AvroTap[T: ClassTag](path: String,
-                                @transient private val schema: Schema = null) extends Tap[T] {
-  private lazy val s = Externalizer(schema)
-  override def value: Iterator[T] = FileStorage(path).avroFile(s.get)
-  override def open(sc: ScioContext): SCollection[T] = sc.avroFile[T](path, s.get)
-}
-
-/** Tap for BigQuery TableRow JSON files on local file system or GCS. */
-case class TableRowJsonTap(path: String) extends Tap[TableRow] {
-  override def value: Iterator[TableRow] = FileStorage(path).tableRowJsonFile
-  override def open(sc: ScioContext): SCollection[TableRow] = sc.tableRowJsonFile(path)
-}
-
-/** Tap for BigQuery tables. */
-case class BigQueryTap(table: TableReference) extends Tap[TableRow] {
-  override def value: Iterator[TableRow] = BigQueryClient.defaultInstance().getTableRows(table)
-  override def open(sc: ScioContext): SCollection[TableRow] = sc.bigQueryTable(table)
-}
-
-/**
- * Tap for object files on local file system or GCS. Note that serialization is not guaranteed to
- * be compatible across Scio releases.
- */
-case class ObjectFileTap[T: ClassTag](path: String) extends Tap[T] {
-  override def value: Iterator[T] = {
-    val elemCoder = ScioUtil.getScalaCoder[T]
-    FileStorage(path).avroFile[GenericRecord](AvroBytesUtil.schema).map { r =>
-      AvroBytesUtil.decode(elemCoder, r)
-    }
-  }
-  override def open(sc: ScioContext): SCollection[T] = sc.objectFile(path)
-}
-
-
-
-private[scio] class InMemoryTap[T: ClassTag] extends Tap[T] {
+private[scio] class InMemoryTap[T: Coder] extends Tap[T] {
   private[scio] val id: String = UUID.randomUUID().toString
   override def value: Iterator[T] = InMemorySink.get(id).iterator
   override def open(sc: ScioContext): SCollection[T] =
     sc.parallelize[T](InMemorySink.get(id))
+}
+
+private[scio] class MaterializeTap[T: Coder] private (val path: String, coder: BCoder[T]) extends Tap[T] {
+  private val _path = ScioUtil.addPartSuffix(path)
+
+  override def value: Iterator[T] = {
+    FileStorage(_path)
+    .avroFile[GenericRecord](AvroBytesUtil.schema)
+      .map(AvroBytesUtil.decode(coder, _))
+  }
+
+  private def dofn =
+    new DoFn[GenericRecord, T] {
+      @ProcessElement
+      private[scio] def processElement(c: DoFn[GenericRecord, T]#ProcessContext): Unit = {
+        c.output(AvroBytesUtil.decode(coder, c.element()))
+      }
+    }
+
+  override def open(sc: ScioContext): SCollection[T] = sc.requireNotClosed {
+    val read = AvroIO.readGenericRecords(AvroBytesUtil.schema).from(_path)
+    sc.wrap(sc.applyInternal(read)).setName(_path)
+      .parDo(dofn)
+  }
+}
+
+object MaterializeTap {
+  def apply[T: Coder](path: String, context: ScioContext) =
+    new MaterializeTap(path, CoderMaterializer.beam(context, Coder[T]))
 }

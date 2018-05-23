@@ -19,9 +19,9 @@ package com.spotify.scio.jdbc
 
 import java.sql.ResultSet
 
-import com.spotify.scio.ScioContext
-import org.apache.beam.sdk.io.{jdbc => jio}
-import com.spotify.scio.testing.PipelineSpec
+import com.spotify.scio._
+import org.apache.beam.sdk.io.{jdbc => beam}
+import com.spotify.scio.testing._
 
 object JdbcJob {
 
@@ -72,7 +72,7 @@ class JdbcTest extends PipelineSpec {
 
     JobTest[JdbcJob.type]
       .args(args: _*)
-      .input(JdbcIO(readOpts), Seq("a", "b", "c"))
+      .input(JdbcIO[String](readOpts), Seq("a", "b", "c"))
       .output(JdbcIO[String](writeOpts))(_ should containInAnyOrder (xs))
       .run()
   }
@@ -101,7 +101,7 @@ class JdbcTest extends PipelineSpec {
 
     JobTest[JdbcJob.type]
       .args(args: _*)
-      .input(JdbcIO(readOpts), Seq("a", "b", "c"))
+      .input(JdbcIO[String](readOpts), Seq("a", "b", "c"))
       .output(JdbcIO[String](writeOpts))(_ should containInAnyOrder (expected))
       .run()
   }
@@ -113,7 +113,7 @@ class JdbcTest extends PipelineSpec {
       connectionUrl = "foo",
       driverClass = classOf[java.sql.Driver]
     )
-    jdbcIoId(password, "query") shouldEqual "user:pass@foo:query"
+    JdbcIO.jdbcIoId(password, "query") shouldEqual "user:pass@foo:query"
   }
 
   it should "generate connection string without password" in {
@@ -123,7 +123,7 @@ class JdbcTest extends PipelineSpec {
       connectionUrl = "foo",
       driverClass = classOf[java.sql.Driver]
     )
-    jdbcIoId(noPassword, "query") shouldEqual "user@foo:query"
+    JdbcIO.jdbcIoId(noPassword, "query") shouldEqual "user@foo:query"
   }
 
   it should "generate datasource config with password" in {
@@ -133,7 +133,7 @@ class JdbcTest extends PipelineSpec {
       connectionUrl = "foo",
       driverClass = classOf[java.sql.Driver]
     )
-    val expected = jio.JdbcIO.DataSourceConfiguration
+    val expected = beam.JdbcIO.DataSourceConfiguration
       .create(classOf[java.sql.Driver].getCanonicalName, "foo")
       .withUsername("user")
       .withPassword("pass")
@@ -148,7 +148,7 @@ class JdbcTest extends PipelineSpec {
       connectionUrl = "foo",
       driverClass = classOf[java.sql.Driver]
     )
-    val expected = jio.JdbcIO.DataSourceConfiguration
+    val expected = beam.JdbcIO.DataSourceConfiguration
       .create(classOf[java.sql.Driver].getCanonicalName, "foo")
       .withUsername("user")
 

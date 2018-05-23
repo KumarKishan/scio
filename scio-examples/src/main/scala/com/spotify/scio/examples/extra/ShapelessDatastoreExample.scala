@@ -28,6 +28,7 @@ import com.spotify.scio._
 import com.spotify.scio.examples.common.ExampleData
 import shapeless.datatype.datastore._
 
+
 object ShapelessDatastoreExample {
   val kind = "shapeless"
   // Define case class representation of Datastore entities

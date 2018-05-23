@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import com.spotify.scio.testing.PipelineSpec
 
+
 class CustomParallelismSCollectionTest extends PipelineSpec {
   "CustomParallelismSCollection" should "support filterWithParallelism()" in {
     runWithContext { sc =>

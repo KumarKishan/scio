@@ -31,6 +31,7 @@ import org.apache.beam.sdk.values._
 import org.apache.beam.sdk.{Pipeline, PipelineResult}
 import org.joda.time.Duration
 
+
 object BeamExample {
 
   // A Beam native source `PTransform` where the input type is `PBegin`

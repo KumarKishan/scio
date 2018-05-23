@@ -23,6 +23,7 @@ import com.spotify.scio.tensorflow._
 import shapeless.datatype.tensorflow._
 
 
+
 /**
  * TensorFlow examples using shapeless-datatype to seamlessly convert between case classes and
  * TensorFlow Example ProtoBuf.

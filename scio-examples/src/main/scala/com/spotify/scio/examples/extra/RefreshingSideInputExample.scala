@@ -23,6 +23,7 @@
 package com.spotify.scio.examples.extra
 
 import com.spotify.scio._
+
 import com.spotify.scio.values.WindowOptions
 import org.apache.beam.sdk.io.GenerateSequence
 import org.apache.beam.sdk.options.StreamingOptions
@@ -42,6 +43,7 @@ import scala.util.{Random, Success, Try}
  */
 object RefreshingSideInputExample {
   case class LotteryTicket(numbers: Seq[Int])
+
   case class LotteryResult(
                             eventTime: Instant,
                             processTime: Instant,
@@ -57,7 +59,6 @@ object RefreshingSideInputExample {
   def main(cmdlineArgs: Array[String]): Unit = {
     val (sc, args) = ContextAndArgs(cmdlineArgs)
     sc.optionsAs[StreamingOptions].setStreaming(true)
-
 
     // An unbounded input that produces a sequence of 5 randomly generated winning lottery numbers,
     // refreshed every 10 seconds. Materialized as a singleton `SideInput`.

@@ -20,6 +20,7 @@ package com.spotify.scio.extra
 import java.util.UUID
 
 import com.spotify.scio.ScioContext
+
 import com.spotify.scio.values.{SCollection, SideInput}
 import org.apache.beam.sdk.transforms.{DoFn, View}
 import org.apache.beam.sdk.values.PCollectionView

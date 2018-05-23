@@ -17,6 +17,9 @@
 
 package com.spotify.scio.util
 
+import com.spotify.scio.coders.Coder
+
+
 import java.util.{Iterator => JIterator}
 
 import com.google.common.collect.Iterators
@@ -26,11 +29,9 @@ import org.apache.beam.sdk.transforms.join.{CoGbkResult, CoGroupByKey, KeyedPCol
 import org.apache.beam.sdk.transforms.{DoFn, ParDo}
 import org.apache.beam.sdk.values.{KV, TupleTag}
 
-import scala.reflect.ClassTag
-
 private[scio] object ArtisanJoin {
 
-  private def cogroup[KEY: ClassTag, A: ClassTag, B: ClassTag, A1, B1]
+  private def cogroup[KEY: Coder, A: Coder, B: Coder, A1: Coder, B1: Coder]
   (name: String, a: SCollection[(KEY, A)], b: SCollection[(KEY, B)])
   (leftFn: JIterator[A] => JIterator[A1], rightFn: JIterator[B] => JIterator[B1])
   : SCollection[(KEY, (A1, B1))] = {
@@ -63,22 +64,22 @@ private[scio] object ArtisanJoin {
       }))
   }
 
-  def apply[KEY: ClassTag, A: ClassTag, B: ClassTag](name: String,
+  def apply[KEY: Coder, A: Coder, B: Coder](name: String,
                                                      a: SCollection[(KEY, A)],
                                                      b: SCollection[(KEY, B)])
   : SCollection[(KEY, (A, B))] = cogroup(name, a, b)(identity, identity)
 
-  def left[KEY: ClassTag, A: ClassTag, B: ClassTag](name: String,
+  def left[KEY: Coder, A: Coder, B: Coder](name: String,
                                                     a: SCollection[(KEY, A)],
                                                     b: SCollection[(KEY, B)])
   : SCollection[(KEY, (A, Option[B]))] = cogroup(name, a, b)(identity, toOptions)
 
-  def right[KEY: ClassTag, A: ClassTag, B: ClassTag](name: String,
+  def right[KEY: Coder, A: Coder, B: Coder](name: String,
                                                      a: SCollection[(KEY, A)],
                                                      b: SCollection[(KEY, B)])
   : SCollection[(KEY, (Option[A], B))] = cogroup(name, a, b)(toOptions, identity)
 
-  def outer[KEY: ClassTag, A: ClassTag, B: ClassTag](name: String,
+  def outer[KEY: Coder, A: Coder, B: Coder](name: String,
                                                      a: SCollection[(KEY, A)],
                                                      b: SCollection[(KEY, B)])
   : SCollection[(KEY, (Option[A], Option[B]))] = cogroup(name, a, b)(toOptions, toOptions)

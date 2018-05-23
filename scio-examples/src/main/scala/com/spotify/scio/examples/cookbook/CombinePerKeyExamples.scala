@@ -31,6 +31,7 @@ import com.spotify.scio.examples.common.ExampleData
 import scala.collection.JavaConverters._
 import scala.collection.SortedSet
 
+
 object CombinePerKeyExamples {
   def main(cmdlineArgs: Array[String]): Unit = {
     // Create `ScioContext` and `Args`

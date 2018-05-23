@@ -34,6 +34,7 @@ import org.apache.beam.sdk.io.FileSystems
 import scala.collection.JavaConverters._
 import scala.io.Source
 
+
 object TfIdf {
 
   def main(cmdlineArgs: Array[String]): Unit = {

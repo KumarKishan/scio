@@ -19,6 +19,7 @@ package com.spotify.scio.values
 
 import com.spotify.scio.testing.PipelineSpec
 
+
 class ClosureTest extends PipelineSpec {
 
   "SCollection" should "support lambda" in {

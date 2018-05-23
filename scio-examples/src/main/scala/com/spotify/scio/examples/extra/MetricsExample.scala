@@ -23,6 +23,7 @@ package com.spotify.scio.examples.extra
 
 import com.spotify.scio._
 
+
 object MetricsExample {
 
   // ## Creating metrics

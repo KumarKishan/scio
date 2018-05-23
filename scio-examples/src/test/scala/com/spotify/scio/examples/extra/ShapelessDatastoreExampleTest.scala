@@ -18,7 +18,8 @@
 package com.spotify.scio.examples.extra
 
 import com.google.datastore.v1.client.DatastoreHelper.{makeKey, makeValue}
-import com.google.datastore.v1.{Entity, Query}
+import com.google.datastore.v1.Entity
+import com.spotify.scio.io._
 import com.spotify.scio.testing._
 
 class ShapelessDatastoreExampleTest extends PipelineSpec {
@@ -45,7 +46,7 @@ class ShapelessDatastoreExampleTest extends PipelineSpec {
   "ShapelessDatastoreReadExample" should "work" in {
     JobTest[com.spotify.scio.examples.extra.ShapelessDatastoreReadExample.type]
       .args("--input=project", "--output=out.txt")
-      .input(DatastoreIO("project", Query.getDefaultInstance), entities)
+      .input(DatastoreIO("project"), entities)
       .output(TextIO("out.txt"))(_ should containInAnyOrder (textOut))
       .run()
   }

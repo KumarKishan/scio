@@ -31,7 +31,7 @@ val autoValueVersion = "1.4.1"
 val avroVersion = "1.8.2"
 val breezeVersion ="1.0-RC2"
 val chillVersion = "0.9.3"
-val circeVersion = "0.9.1"
+val circeVersion = "0.9.3"
 val commonsIoVersion = "2.6"
 val commonsMath3Version = "3.6.1"
 val elasticsearch2Version = "2.1.0"
@@ -52,18 +52,20 @@ val junitVersion = "4.12"
 val kantanCsvVersion = "0.4.0"
 val kryoVersion = "4.0.2" // explicitly depend on 4.0.1+ due to https://github.com/EsotericSoftware/kryo/pull/516
 val parquetAvroExtraVersion = "0.2.2"
-val parquetVersion = "1.9.0"
+val parquetVersion = "1.10.0"
 val protobufGenericVersion = "0.2.4"
 val protobufVersion = "3.5.1"
 val scalacheckShapelessVersion = "1.1.8"
 val scalacheckVersion = "1.13.5"
 val scalaMacrosVersion = "2.1.1"
 val scalatestVersion = "3.0.5"
+val shapelessVersion = "2.3.3"
 val shapelessDatatypeVersion = "0.1.9"
 val slf4jVersion = "1.7.25"
 val sparkeyVersion = "2.3.0"
 val tensorFlowVersion = "1.8.0"
 val zoltarVersion = "0.4.0"
+val magnoliaVersion = "0.10.1-SNAPSHOT"
 val grpcVersion = "1.7.0"
 val caseappVersion = "2.0.0-M3"
 
@@ -99,6 +101,13 @@ def previousVersion(currentVersion: String): Option[String] = {
   if (z == "0") None
   else Some(s"$x.$y.${z.toInt - 1}")
 }
+
+def resourcesOnCompilerCp(config: Configuration): Setting[_] =
+  managedClasspath in config := {
+    val res = (resourceDirectory in config).value
+    val old = (managedClasspath in config).value
+    Attributed.blank(res) +: old
+  }
 
 val commonSettings = Sonatype.sonatypeSettings ++ assemblySettings ++ Seq(
   organization       := "com.spotify",
@@ -297,20 +306,23 @@ lazy val root: Project = Project(
   scioSchemas,
   scioExamples,
   scioRepl,
-  scioJmh
+  scioJmh,
+  scioCoders,
+  scioCodersMacros
 )
 
 lazy val scioCore: Project = Project(
   "scio-core",
   file("scio-core")
 ).settings(
-  commonSettings ++ macroSettings,
+  commonSettings ++ macroSettings ++ itSettings,
   description := "Scio - A Scala API for Apache Beam and Google Cloud Dataflow",
   resources in Compile ++= Seq(
     (baseDirectory in ThisBuild).value / "build.sbt",
     (baseDirectory in ThisBuild).value / "version.sbt"),
   libraryDependencies ++= Seq(
     "org.apache.beam" % "beam-sdks-java-core" % beamVersion,
+    "org.apache.beam" % "beam-sdks-java-io-google-cloud-platform" % beamVersion,
     "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion % "provided",
     "com.twitter" %% "algebird-core" % algebirdVersion,
     "com.twitter" %% "chill" % chillVersion,
@@ -326,24 +338,28 @@ lazy val scioCore: Project = Project(
     "me.lyh" %% "protobuf-generic" % protobufGenericVersion,
     "org.apache.xbean" % "xbean-asm5-shaded" % asmVersion,
     "io.grpc" % "grpc-all" % grpcVersion exclude("io.opencensus", "opencensus-api"),
-    "com.github.alexarchambault" %% "case-app" % caseappVersion
+    "com.github.alexarchambault" %% "case-app" % caseappVersion,
+    "org.scalatest" %% "scalatest" % scalatestVersion % "test"
   )
 ).dependsOn(
-  scioAvro,
-  scioBigQuery % "test->test;compile->compile"
+  scioSchemas % "test->test",
+  scioCoders
+).configs(
+  IntegrationTest
 ).enablePlugins(BuildInfoPlugin)
 
 lazy val scioTest: Project = Project(
   "scio-test",
   file("scio-test")
 ).settings(
-  commonSettings ++ itSettings,
+  commonSettings ++ itSettings ++ macroSettings,
   description := "Scio helpers for ScalaTest",
   libraryDependencies ++= Seq(
     "org.apache.beam" % "beam-runners-direct-java" % beamVersion,
     "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion % "test,it",
     "org.apache.beam" % "beam-sdks-java-core" % beamVersion % "test",
     "org.apache.beam" % "beam-sdks-java-core" % beamVersion % "test" classifier "tests",
+    "org.apache.beam" % "beam-sdks-java-io-google-cloud-platform" % beamVersion,
     "org.scalatest" %% "scalatest" % scalatestVersion,
     "org.scalacheck" %% "scalacheck" % scalacheckVersion % "test,it",
     "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % scalacheckShapelessVersion % "test,it",
@@ -354,14 +370,47 @@ lazy val scioTest: Project = Project(
     "com.spotify.sparkey" % "sparkey" % sparkeyVersion % "test",
     "com.novocode" % "junit-interface" % junitInterfaceVersion,
     "junit" % "junit" % junitVersion % "test"
-  ),
-  addCompilerPlugin(paradiseDependency)
+  )
 ).configs(
   IntegrationTest
 ).dependsOn(
-  scioCore % "test->test;compile->compile",
-  scioSchemas % "test,it"
+  scioCore % "compile->compile;test->test;it->it",
+  scioSchemas % "test,it",
+  scioAvro % "compile->test",
+  scioBigQuery % "compile->test"
 )
+
+lazy val scioCodersMacros: Project = Project(
+  "scio-coders-macros",
+  file("scio-coders-macros")
+).settings(
+  commonSettings ++ macroSettings,
+  description := "Scio add-on for static Coder derivation (macros)",
+  libraryDependencies ++= Seq(
+    "org.apache.beam" % "beam-sdks-java-core" % beamVersion,
+    "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion % "provided",
+    "org.scalatest" %% "scalatest" % scalatestVersion % "test",
+    "com.propensive" %% "magnolia" % magnoliaVersion,
+    "com.chuusai" %% "shapeless" % shapelessVersion,
+    "com.twitter" %% "algebird-core" % algebirdVersion
+  )
+)
+
+lazy val scioCoders: Project = Project(
+  "scio-coders",
+  file("scio-coders")
+).settings(
+  commonSettings,
+  description := "Scio add-on for static Coder derivation",
+  libraryDependencies ++= Seq(
+    "org.apache.beam" % "beam-sdks-java-core" % beamVersion,
+    "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion % "provided",
+    "org.scalatest" %% "scalatest" % scalatestVersion % "test",
+    "com.propensive" %% "magnolia" % magnoliaVersion,
+    "com.chuusai" %% "shapeless" % shapelessVersion,
+    "com.twitter" %% "algebird-core" % algebirdVersion
+  )
+).dependsOn(scioCodersMacros)
 
 lazy val scioAvro: Project = Project(
   "scio-avro",
@@ -377,14 +426,18 @@ lazy val scioAvro: Project = Project(
     "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % scalacheckShapelessVersion % "test",
     "me.lyh" %% "shapeless-datatype-core" % shapelessDatatypeVersion % "test"
   ) ++ beamSDKIO
+)
+.dependsOn(
+  scioCore % "compile,it->it"
 ).configs(IntegrationTest)
 
 lazy val scioBigQuery: Project = Project(
   "scio-bigquery",
   file("scio-bigquery")
 ).settings(
-  commonSettings ++ macroSettings ++ itSettings,
+  commonSettings ++ macroSettings ++ itSettings ++ beamRunnerSettings,
   description := "Scio add-on for Google BigQuery",
+  addCompilerPlugin(paradiseDependency),
   libraryDependencies ++= Seq(
     "commons-io" % "commons-io" % commonsIoVersion,
     "joda-time" % "joda-time" % jodaTimeVersion,
@@ -392,11 +445,17 @@ lazy val scioBigQuery: Project = Project(
     "org.slf4j" % "slf4j-api" % slf4jVersion,
     "org.slf4j" % "slf4j-simple" % slf4jVersion % "test,it",
     "org.scalatest" %% "scalatest" % scalatestVersion % "test,it",
+    "org.scalacheck" %% "scalacheck" % scalacheckVersion % "test,it",
     "com.google.cloud" % "google-cloud-storage" % gcsVersion % "test,it",
-    "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % scalacheckShapelessVersion % "test",
+    // DataFlow testing requires junit and hamcrest
+    "org.hamcrest" % "hamcrest-all" % hamcrestVersion % "test,it",
+    "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % scalacheckShapelessVersion % "test,it",
     "me.lyh" %% "shapeless-datatype-core" % shapelessDatatypeVersion % "test"
-  ) ++ beamSDKIO
+  )
+).dependsOn(
+  scioCore % "compile,it->it"
 ).configs(IntegrationTest)
+
 
 lazy val scioBigtable: Project = Project(
   "scio-bigtable",
@@ -506,7 +565,8 @@ lazy val scioExtra: Project = Project(
   ).map(_ % circeVersion)
 ).dependsOn(
   scioCore,
-  scioTest % "it->it;test->test"
+  scioTest % "it->it;test->test",
+  scioAvro
 ).configs(IntegrationTest)
 
 lazy val scioHdfs: Project = Project(
@@ -560,6 +620,7 @@ lazy val scioParquet: Project = Project(
   )
 ).dependsOn(
   scioCore,
+  scioAvro,
   scioSchemas % "test",
   scioTest % "test->test"
 )
@@ -597,6 +658,7 @@ lazy val scioTensorFlow: Project = Project(
       (testLoader in Test).value,
        (dependencyClasspath in Test).value)
 ).dependsOn(
+  scioAvro,
   scioCore,
   scioTest % "test->test"
 )
@@ -647,6 +709,7 @@ lazy val scioExamples: Project = Project(
   sources in doc in Compile := List()
 ).dependsOn(
   scioCore,
+  scioBigQuery,
   scioBigtable,
   scioSchemas,
   scioJdbc,
@@ -673,6 +736,7 @@ lazy val scioRepl: Project = Project(
   assemblyJarName in assembly := s"scio-repl-${version.value}.jar"
 ).dependsOn(
   scioCore,
+  scioBigQuery,
   scioExtra
 )
 

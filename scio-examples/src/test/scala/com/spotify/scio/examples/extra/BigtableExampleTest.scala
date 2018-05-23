@@ -20,6 +20,7 @@ package com.spotify.scio.examples.extra
 import com.google.bigtable.v2.{Mutation, Row}
 import com.google.protobuf.ByteString
 import com.spotify.scio.bigtable._
+import com.spotify.scio.io._
 import com.spotify.scio.testing._
 
 class BigtableExampleTest extends PipelineSpec {
@@ -39,7 +40,8 @@ class BigtableExampleTest extends PipelineSpec {
     JobTest[com.spotify.scio.examples.extra.BigtableWriteExample.type]
       .args(bigtableOptions :+ "--input=in.txt": _*)
       .input(TextIO("in.txt"), textIn)
-      .output(BigtableOutput[Mutation]("my-project", "my-instance", "my-table")) {
+      .output(BigtableIO[(ByteString, Iterable[Mutation])](
+        "my-project", "my-instance", "my-table")) {
         _ should containInAnyOrder (expectedMutations)
       }
       .run()
@@ -57,7 +59,7 @@ class BigtableExampleTest extends PipelineSpec {
   "BigtableReadExample" should "work" in {
     JobTest[com.spotify.scio.examples.extra.BigtableReadExample.type]
       .args(bigtableOptions :+ "--output=out.txt": _*)
-      .input(BigtableInput("my-project", "my-instance", "my-table"), rowsIn)
+      .input(BigtableIO[Row]("my-project", "my-instance", "my-table"), rowsIn)
       .output(TextIO("out.txt"))(_ should containInAnyOrder (expectedText))
       .run()
   }

@@ -21,13 +21,16 @@ import com.google.common.collect.ImmutableMap
 import com.google.datastore.v1.Entity
 import com.google.datastore.v1.client.DatastoreHelper.{makeKey, makeValue}
 import com.spotify.scio._
+import com.spotify.scio.coders.Coder
 import com.spotify.scio.avro.AvroUtils.{newGenericRecord, newSpecificRecord}
-import com.spotify.scio.avro.{AvroUtils, TestRecord}
+import com.spotify.scio.avro._
 import com.spotify.scio.bigquery._
+import com.spotify.scio.io._
 import com.spotify.scio.util.MockedPrintStream
 import org.apache.avro.generic.GenericRecord
-import org.apache.beam.sdk.{io => gio}
+import org.apache.beam.sdk.{io => beam}
 import org.scalatest.exceptions.TestFailedException
+
 
 import scala.io.Source
 
@@ -55,6 +58,7 @@ object SpecificAvroFileJob {
 object GenericAvroFileJob {
   def main(cmdlineArgs: Array[String]): Unit = {
     val (sc, args) = ContextAndArgs(cmdlineArgs)
+    implicit val coder = Coder.genericRecordCoder(AvroUtils.schema)
     sc.avroFile[GenericRecord](args("input"), AvroUtils.schema)
       .saveAsAvroFile(args("output"))
     sc.close()
@@ -66,6 +70,15 @@ object BigQueryJob {
     val (sc, args) = ContextAndArgs(cmdlineArgs)
     sc.bigQueryTable(args("input"))
       .saveAsBigQuery(args("output"))
+    sc.close()
+  }
+}
+
+object TableRowJsonJob {
+  def main(cmdlineArgs: Array[String]): Unit = {
+    val (sc, args) = ContextAndArgs(cmdlineArgs)
+    sc.tableRowJsonFile(args("input"))
+      .saveAsTableRowJsonFile(args("output"))
     sc.close()
   }
 }
@@ -94,16 +107,7 @@ object PubsubWithAttributesJob {
     val (sc, args) = ContextAndArgs(cmdlineArgs)
     sc.pubsubTopicWithAttributes[String](args("input"))
       .map(kv => (kv._1 + "X", kv._2))
-      .saveAsPubsubWithAttributes(args("output"))
-    sc.close()
-  }
-}
-
-object TableRowJsonJob {
-  def main(cmdlineArgs: Array[String]): Unit = {
-    val (sc, args) = ContextAndArgs(cmdlineArgs)
-    sc.tableRowJsonFile(args("input"))
-      .saveAsTableRowJsonFile(args("output"))
+      .saveAsPubsubWithAttributes[String](args("output"))
     sc.close()
   }
 }
@@ -142,9 +146,9 @@ object MaterializeJob {
 object CustomIOJob {
   def main(cmdlineArgs: Array[String]): Unit = {
     val (sc, args) = ContextAndArgs(cmdlineArgs)
-    val inputTransform = gio.TextIO.read()
+    val inputTransform = beam.TextIO.read()
       .from(args("input"))
-    val outputTransform = gio.TextIO.write()
+    val outputTransform = beam.TextIO.write()
       .to(args("output"))
     sc.customInput("TextIn", inputTransform)
       .map(_.toInt)
@@ -210,7 +214,7 @@ class JobTestTest extends PipelineSpec {
   def testObjectFileJob(xs: Int*): Unit = {
     JobTest[ObjectFileJob.type]
       .args("--input=in.avro", "--output=out.avro")
-      .input(ObjectFileIO("in.avro"), Seq(1, 2, 3))
+      .input(ObjectFileIO[Int]("in.avro"), Seq(1, 2, 3))
       .output(ObjectFileIO[Int]("out.avro"))(_ should containInAnyOrder (xs))
       .run()
   }
@@ -227,7 +231,7 @@ class JobTestTest extends PipelineSpec {
   def testSpecificAvroFileJob(xs: Seq[TestRecord]): Unit = {
     JobTest[SpecificAvroFileJob.type]
       .args("--input=in.avro", "--output=out.avro")
-      .input(AvroIO("in.avro"), (1 to 3).map(newSpecificRecord))
+      .input(AvroIO[TestRecord]("in.avro"), (1 to 3).map(newSpecificRecord))
       .output(AvroIO[TestRecord]("out.avro"))(_ should containInAnyOrder (xs))
       .run()
   }
@@ -246,9 +250,10 @@ class JobTestTest extends PipelineSpec {
   }
 
   def testGenericAvroFileJob(xs: Seq[GenericRecord]): Unit = {
+    implicit val coder = Coder.slowGenericRecordCoder
     JobTest[GenericAvroFileJob.type]
       .args("--input=in.avro", "--output=out.avro")
-      .input(AvroIO("in.avro"), (1 to 3).map(newGenericRecord))
+      .input(AvroIO[GenericRecord]("in.avro"), (1 to 3).map(newGenericRecord))
       .output(AvroIO[GenericRecord]("out.avro"))(_ should containInAnyOrder (xs))
       .run()
   }
@@ -271,7 +276,7 @@ class JobTestTest extends PipelineSpec {
   def testBigQuery(xs: Seq[TableRow]): Unit = {
     JobTest[BigQueryJob.type]
       .args("--input=table.in", "--output=table.out")
-      .input(BigQueryIO("table.in"), (1 to 3).map(newTableRow))
+      .input(BigQueryIO[TableRow]("table.in"), (1 to 3).map(newTableRow))
       .output(BigQueryIO[TableRow]("table.out"))(_ should containInAnyOrder (xs))
       .run()
   }
@@ -283,6 +288,23 @@ class JobTestTest extends PipelineSpec {
   it should "fail incorrect BigQueryJob" in {
     an [AssertionError] should be thrownBy { testBigQuery((1 to 2).map(newTableRow)) }
     an [AssertionError] should be thrownBy { testBigQuery((1 to 4).map(newTableRow)) }
+  }
+
+  def testTableRowJson(xs: Seq[TableRow]): Unit = {
+    JobTest[TableRowJsonJob.type]
+      .args("--input=in.json", "--output=out.json")
+      .input(TableRowJsonIO("in.json"), (1 to 3).map(newTableRow))
+      .output(TableRowJsonIO("out.json"))(_ should containInAnyOrder (xs))
+      .run()
+  }
+
+  it should "pass correct TableRowJsonIO" in {
+    testTableRowJson((1 to 3).map(newTableRow))
+  }
+
+  it should "fail incorrect TableRowJsonIO" in {
+    an [AssertionError] should be thrownBy { testTableRowJson((1 to 2).map(newTableRow)) }
+    an [AssertionError] should be thrownBy { testTableRowJson((1 to 4).map(newTableRow)) }
   }
 
   def newEntity(i: Int): Entity = Entity.newBuilder()
@@ -310,7 +332,7 @@ class JobTestTest extends PipelineSpec {
   def testPubsubJob(xs: String*): Unit = {
     JobTest[PubsubJob.type]
       .args("--input=in", "--output=out")
-      .input(PubsubIO("in"), Seq("a", "b", "c"))
+      .input(PubsubIO[String]("in"), Seq("a", "b", "c"))
       .output(PubsubIO[String]("out"))(_ should containInAnyOrder (xs))
       .run()
   }
@@ -329,7 +351,7 @@ class JobTestTest extends PipelineSpec {
     val m = Map("a" -> "1", "b" -> "2", "c" -> "3")
     JobTest[PubsubWithAttributesJob.type]
       .args("--input=in", "--output=out")
-      .input(PubsubIO("in"), Seq("a", "b", "c").map((_, m)))
+      .input(PubsubIO[(String, M)]("in"), Seq("a", "b", "c").map((_, m)))
       .output(PubsubIO[(String, M)]("out"))(_ should containInAnyOrder (xs.map((_, m))))
       .run()
   }
@@ -343,23 +365,6 @@ class JobTestTest extends PipelineSpec {
     an [AssertionError] should be thrownBy { testPubsubWithAttributesJob("aX", "bX", "cX", "dX") }
   }
 
-  def testTableRowJson(xs: Seq[TableRow]): Unit = {
-    JobTest[TableRowJsonJob.type]
-      .args("--input=in.json", "--output=out.json")
-      .input(TableRowJsonIO("in.json"), (1 to 3).map(newTableRow))
-      .output(TableRowJsonIO("out.json"))(_ should containInAnyOrder (xs))
-      .run()
-  }
-
-  it should "pass correct TableRowJsonIO" in {
-    testTableRowJson((1 to 3).map(newTableRow))
-  }
-
-  it should "fail incorrect TableRowJsonIO" in {
-    an [AssertionError] should be thrownBy { testTableRowJson((1 to 2).map(newTableRow)) }
-    an [AssertionError] should be thrownBy { testTableRowJson((1 to 4).map(newTableRow)) }
-  }
-
   def testTextFileJob(xs: String*): Unit = {
     JobTest[TextFileJob.type]
       .args("--input=in.txt", "--output=out.txt")
@@ -368,11 +373,11 @@ class JobTestTest extends PipelineSpec {
       .run()
   }
 
-  it should "pass correct TextFileIO" in {
+  it should "pass correct TextIO" in {
     testTextFileJob("aX", "bX", "cX")
   }
 
-  it should "fail incorrect TextFileIO" in {
+  it should "fail incorrect TextIO" in {
     an [AssertionError] should be thrownBy { testTextFileJob("aX", "bX") }
     an [AssertionError] should be thrownBy { testTextFileJob("aX", "bX", "cX", "dX") }
   }
@@ -398,7 +403,7 @@ class JobTestTest extends PipelineSpec {
   def testCustomIOJob(xs: String*): Unit = {
     JobTest[CustomIOJob.type]
       .args("--input=in.txt", "--output=out.txt")
-      .input(CustomIO("TextIn"), Seq(1, 2, 3).map(_.toString))
+      .input(CustomIO[String]("TextIn"), Seq(1, 2, 3).map(_.toString))
       .output(CustomIO[String]("TextOut"))(_ should containInAnyOrder (xs))
       .run()
   }
@@ -585,7 +590,7 @@ class JobTestTest extends PipelineSpec {
     "JobTestFromType" should "work" in {
       JobTest[ObjectFileJob.type]
         .args("--input=in.avro", "--output=out.avro")
-        .input(ObjectFileIO("in.avro"), Seq(1, 2, 3))
+        .input(ObjectFileIO[Int]("in.avro"), Seq(1, 2, 3))
         .output(ObjectFileIO[Int]("out.avro"))(_ should containInAnyOrder(Seq(1, 2, 3)))
     }
   }
@@ -594,7 +599,7 @@ class JobTestTest extends PipelineSpec {
     "JobTestFromString" should "work" in {
       JobTest("com.spotify.scio.testing.ObjectFileJob")
         .args("--input=in.avro", "--output=out.avro")
-        .input(ObjectFileIO("in.avro"), Seq(1, 2, 3))
+        .input(ObjectFileIO[Int]("in.avro"), Seq(1, 2, 3))
         .output(ObjectFileIO[Int]("out.avro"))(_ should containInAnyOrder (Seq(1, 2, 3)))
     }
   }
@@ -603,14 +608,12 @@ class JobTestTest extends PipelineSpec {
     "MultiJobTest" should "work" in {
       JobTest[ObjectFileJob.type]
         .args("--input=in.avro", "--output=out.avro")
-        .input(ObjectFileIO("in.avro"), Seq(1, 2, 3))
+        .input(ObjectFileIO[Int]("in.avro"), Seq(1, 2, 3))
         .output(ObjectFileIO[Int]("out.avro"))(_ should containInAnyOrder (Seq(1, 2, 3)))
-
-      testBigQuery((1 to 3).map(newTableRow))
 
       JobTest[ObjectFileJob.type]
         .args("--input=in2.avro", "--output=out2.avro")
-        .input(ObjectFileIO("in2.avro"), Seq(1, 2, 3))
+        .input(ObjectFileIO[Int]("in2.avro"), Seq(1, 2, 3))
         .output(ObjectFileIO[Int]("out2.avro"))(_ should containInAnyOrder (Seq(1, 2, 3)))
     }
   }
@@ -620,7 +623,7 @@ class JobTestTest extends PipelineSpec {
     "OriginalJobTest" should "work" in {
       InternalJobTest[ObjectFileJob.type]
         .args("--input=in.avro", "--output=out.avro")
-        .input(ObjectFileIO("in.avro"), Seq(1, 2, 3))
+        .input(ObjectFileIO[Int]("in.avro"), Seq(1, 2, 3))
         .output(ObjectFileIO[Int]("out.avro"))(_ should containInAnyOrder (Seq(1, 2, 3)))
     }
   }
@@ -683,40 +686,8 @@ class JobTestTest extends PipelineSpec {
   }
 
   // =======================================================================
-  // Test invalid TestIO
+  // Test invalid ScioIO
   // =======================================================================
-
-  "TestIO" should "not allow null keys" in {
-    def test[T](testIO: => TestIO[T], repr: String): Unit = {
-      the [IllegalArgumentException] thrownBy {
-        testIO
-      } should have message s"requirement failed: $repr has null key"
-    }
-    test(ObjectFileIO(null), "ObjectFileIO(null)")
-    test(AvroIO(null), "AvroIO(null)")
-    test(BigQueryIO(null), "BigQueryIO(null)")
-    test(DatastoreIO(null), "DatastoreIO(null,null,null)")
-    test(ProtobufIO(null), "ProtobufIO(null)")
-    test(PubsubIO(null), "PubsubIO(null)")
-    test(TableRowJsonIO(null), "TableRowJsonIO(null)")
-    test(TextIO(null), "TextIO(null)")
-  }
-
-  it should "not allow empty keys" in {
-    def test[T](testIO: => TestIO[T], repr: String): Unit = {
-      the [IllegalArgumentException] thrownBy {
-        testIO
-      } should have message s"requirement failed: $repr has empty string key"
-    }
-    test(ObjectFileIO(""), "ObjectFileIO()")
-    test(AvroIO(""), "AvroIO()")
-    test(BigQueryIO(""), "BigQueryIO()")
-    test(DatastoreIO(""), "DatastoreIO(,null,null)")
-    test(ProtobufIO(""), "ProtobufIO()")
-    test(PubsubIO(""), "PubsubIO()")
-    test(TableRowJsonIO(""), "TableRowJsonIO()")
-    test(TextIO(""), "TextIO()")
-  }
 
   "runWithContext" should "fail input with message" in {
     val msg = "requirement failed: Missing test data. Are you reading input outside of JobTest?"

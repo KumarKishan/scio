@@ -17,15 +17,13 @@
 
 package com.spotify.scio
 
+
 import com.google.bigtable.v2._
 import com.google.cloud.bigtable.config.BigtableOptions
 import com.google.protobuf.ByteString
 import com.spotify.scio.io.Tap
-import com.spotify.scio.testing.TestIO
 import com.spotify.scio.values.SCollection
-import org.apache.beam.sdk.io.gcp.bigtable.BigtableIO
 import org.apache.beam.sdk.io.range.ByteKeyRange
-import org.apache.beam.sdk.values.KV
 import org.joda.time.Duration
 
 import scala.collection.JavaConverters._
@@ -105,36 +103,17 @@ package object bigtable {
                  tableId: String,
                  keyRange: ByteKeyRange = null,
                  rowFilter: RowFilter = null): SCollection[Row] = {
-      val bigtableOptions = new BigtableOptions.Builder()
-        .setProjectId(projectId)
-        .setInstanceId(instanceId)
-        .build
-      this.bigtable(bigtableOptions, tableId, keyRange, rowFilter)
+      val parameters = BigtableRead.ReadParam(keyRange, rowFilter)
+      self.read(BigtableRead(projectId, instanceId, tableId))(parameters)
     }
 
     /** Get an SCollection for a Bigtable table. */
     def bigtable(bigtableOptions: BigtableOptions,
                  tableId: String,
                  keyRange: ByteKeyRange,
-                 rowFilter: RowFilter): SCollection[Row] =
-    self.requireNotClosed {
-      if (self.isTest) {
-        val input = BigtableInput(
-          bigtableOptions.getProjectId,
-          bigtableOptions.getInstanceId,
-          tableId)
-        self.getTestInput[Row](input)
-      } else {
-        var read = BigtableIO.read().withBigtableOptions(bigtableOptions).withTableId(tableId)
-        if (keyRange != null) {
-          read = read.withKeyRange(keyRange)
-        }
-        if (rowFilter != null) {
-          read = read.withRowFilter(rowFilter)
-        }
-        self.wrap(self.applyInternal(read))
-          .setName(s"${bigtableOptions.getProjectId} ${bigtableOptions.getInstanceId} $tableId")
-      }
+                 rowFilter: RowFilter): SCollection[Row] = {
+      val parameters = BigtableRead.ReadParam(keyRange, rowFilter)
+      self.read(BigtableRead(bigtableOptions, tableId))(parameters)
     }
 
     /**
@@ -238,11 +217,9 @@ package object bigtable {
                        tableId: String)
                       (implicit ev: T <:< Mutation)
     : Future[Tap[(ByteString, Iterable[Mutation])]] = {
-      val bigtableOptions = new BigtableOptions.Builder()
-        .setProjectId(projectId)
-        .setInstanceId(instanceId)
-        .build
-      this.saveAsBigtable(bigtableOptions, tableId)
+      val param = BigtableWrite.Default
+      self.write(BigtableWrite[T](projectId, instanceId, tableId))(param)
+        .asInstanceOf[Future[Tap[(ByteString, Iterable[Mutation])]]]
     }
 
     /**
@@ -252,17 +229,9 @@ package object bigtable {
                        tableId: String)
                       (implicit ev: T <:< Mutation)
     : Future[Tap[(ByteString, Iterable[Mutation])]] = {
-      if (self.context.isTest) {
-        val output = BigtableOutput(
-          bigtableOptions.getProjectId, bigtableOptions.getInstanceId, tableId)
-        self.context.testOut(output.asInstanceOf[TestIO[(ByteString, Iterable[T])]])(self)
-      } else {
-        val sink = BigtableIO.write().withBigtableOptions(bigtableOptions).withTableId(tableId)
-        self
-          .map(kv => KV.of(kv._1, kv._2.asJava.asInstanceOf[java.lang.Iterable[Mutation]]))
-          .applyInternal(sink)
-      }
-      Future.failed(new NotImplementedError("Bigtable future not implemented"))
+      val param = BigtableWrite.Default
+      self.write(BigtableWrite[T](bigtableOptions, tableId))(param)
+        .asInstanceOf[Future[Tap[(ByteString, Iterable[Mutation])]]]
     }
 
     /**
@@ -275,24 +244,10 @@ package object bigtable {
                        flushInterval: Duration = Duration.standardSeconds(1))
                       (implicit ev: T <:< Mutation)
     : Future[Tap[(ByteString, Iterable[Mutation])]] = {
-      if (self.context.isTest) {
-        val output = BigtableOutput(
-          bigtableOptions.getProjectId, bigtableOptions.getInstanceId, tableId)
-        self.context.testOut(output.asInstanceOf[TestIO[(ByteString, Iterable[T])]])(self)
-      } else {
-        val sink = new BigtableBulkWriter(tableId, bigtableOptions, numOfShards, flushInterval)
-        self
-          .map(kv => KV.of(kv._1, kv._2.asJava.asInstanceOf[java.lang.Iterable[Mutation]]))
-          .applyInternal(sink)
-      }
-      Future.failed(new NotImplementedError("Bigtable future not implemented"))
+      val param = BigtableWrite.Bulk(numOfShards, flushInterval)
+      self.write(BigtableWrite[T](bigtableOptions, tableId))(param)
+        .asInstanceOf[Future[Tap[(ByteString, Iterable[Mutation])]]]
     }
   }
-
-  case class BigtableInput(projectId: String, instanceId: String, tableId: String)
-    extends TestIO[Row](s"$projectId\t$instanceId\t$tableId")
-
-  case class BigtableOutput[T <: Mutation](projectId: String, instanceId: String, tableId: String)
-    extends TestIO[(ByteString, Iterable[T])](s"$projectId\t$instanceId\t$tableId")
 
 }

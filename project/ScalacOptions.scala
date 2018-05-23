@@ -32,7 +32,7 @@ object Scalac {
     // "-language:experimental.macros", // Allow macro definition (besides implementation and application)
     // "-language:higherKinds", // Allow higher-kinded types
     // "-language:implicitConversions", // Allow definition of implicit functions called views
-    "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
+    // "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
     // "-Xfatal-warnings", // Fail the compilation if there are any warnings.
     // "-Xfuture", // Turn on future language features.
     "-Xlint:adapted-args", // Warn if an argument list is modified to match the receiver.

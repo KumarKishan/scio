@@ -20,6 +20,7 @@ package com.spotify.scio.examples.extra
 import com.spotify.scio._
 import com.spotify.scio.extra.annoy._
 
+
 import scala.util.Random
 
 object AnnoyExamples {

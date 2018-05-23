@@ -35,6 +35,7 @@ import org.apache.beam.sdk.util.MimeTypes
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{Duration, Instant}
 
+
 object WindowedWordCount {
 
   private val WINDOW_SIZE = 10L

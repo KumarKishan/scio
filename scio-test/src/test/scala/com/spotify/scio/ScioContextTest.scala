@@ -21,8 +21,10 @@ import java.io.PrintWriter
 import java.nio.file.Files
 
 import com.google.common.collect.Lists
+import com.spotify.scio.io.TextIO
 import com.spotify.scio.metrics.Metrics
 import com.spotify.scio.options.ScioOptions
+
 import com.spotify.scio.testing.{PipelineSpec, TestValidationOptions}
 import com.spotify.scio.util.ScioUtil
 import org.apache.beam.runners.direct.DirectRunner
@@ -93,6 +95,20 @@ class ScioContextTest extends PipelineSpec {
 
     val sc = ScioContext()
     sc.parallelize(Seq("a", "b", "c")).saveAsTextFile(output.toString)
+    output.exists() shouldBe false
+
+    sc.close()
+    output.exists() shouldBe true
+    output.delete()
+  }
+
+  it should "[io] create local output directory on close()" in {
+    val output = Files.createTempDirectory("scio-output-").toFile
+    output.delete()
+
+    val sc = ScioContext()
+    val textIO = TextIO(output.getAbsolutePath)
+    sc.parallelize(Seq("a", "b", "c")).write(textIO)(TextIO.WriteParam())
     output.exists() shouldBe false
 
     sc.close()
