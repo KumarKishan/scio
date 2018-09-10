@@ -53,7 +53,7 @@ trait ScioIOSpec extends PipelineSpec {
     FileUtils.deleteDirectory(tmpDir)
   }
 
-  def testJobTestInput[T: ClassTag](xs: Seq[T], in: String = "in")
+  def testJobTestInput[T: Coder](xs: Seq[T], in: String = "in")
                                    (ioFn: String => ScioIO[T])
                                    (readFn: (ScioContext, String) => SCollection[T]): Unit = {
     def runMain(args: Array[String]): Unit = {
@@ -82,7 +82,7 @@ trait ScioIOSpec extends PipelineSpec {
     // scalastyle:on no.whitespace.before.left.bracket
   }
 
-  def testJobTestOutput[T: ClassTag](xs: Seq[T], out: String = "out")
+  def testJobTestOutput[T: Coder](xs: Seq[T], out: String = "out")
                                     (ioFn: String => ScioIO[T])
                                     (writeFn: (SCollection[T], String) => Future[Tap[T]]): Unit = {
     def runMain(args: Array[String]): Unit = {
@@ -109,7 +109,7 @@ trait ScioIOSpec extends PipelineSpec {
     // scalastyle:on no.whitespace.before.left.bracket
   }
 
-  def testJobTest[T: ClassTag](xs: Seq[T], in: String = "in", out: String = "out")
+  def testJobTest[T: Coder](xs: Seq[T], in: String = "in", out: String = "out")
                               (ioFn: String => ScioIO[T])
                               (readFn: (ScioContext, String) => SCollection[T])
                               (writeFn: (SCollection[T], String) => Future[Tap[T]]): Unit = {
