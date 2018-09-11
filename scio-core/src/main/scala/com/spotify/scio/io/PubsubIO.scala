@@ -53,7 +53,7 @@ object PubsubIO {
     PubsubIOWithAttributes[T](name, idAttribute, timestampAttribute)
 }
 
-private final case class PubsubIOWithoutAttributes[T: ClassTag](name: String,
+private final case class PubsubIOWithoutAttributes[T: ClassTag : Coder](name: String,
                                                                 idAttribute: String,
                                                                 timestampAttribute: String)
   extends PubsubIO[T] {
@@ -132,7 +132,7 @@ private final case class PubsubIOWithoutAttributes[T: ClassTag](name: String,
   }
 }
 
-private final case class PubsubIOWithAttributes[T: ClassTag](name: String,
+private final case class PubsubIOWithAttributes[T: ClassTag : Coder](name: String,
                                                              idAttribute: String,
                                                              timestampAttribute: String)
   extends PubsubIO[(T, Map[String, String])] {

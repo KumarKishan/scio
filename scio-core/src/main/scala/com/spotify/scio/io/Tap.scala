@@ -67,7 +67,7 @@ final case class TextTap(path: String) extends Tap[String] {
   override def open(sc: ScioContext): SCollection[String] = sc.textFile(path)
 }
 
-private[scio] final case class InMemoryTap[T: ClassTag]() extends Tap[T] {
+private[scio] final case class InMemoryTap[T: Coder]() extends Tap[T] {
   private[scio] val id: String = UUID.randomUUID().toString
 
   override def value: Iterator[T] = InMemorySink.get(id).iterator
@@ -76,7 +76,7 @@ private[scio] final case class InMemoryTap[T: ClassTag]() extends Tap[T] {
     sc.parallelize[T](InMemorySink.get(id))
 }
 
-private[scio] final case class MaterializeTap[T: ClassTag](path: String) extends Tap[T] {
+private[scio] final case class MaterializeTap[T: Coder](path: String, coder: BCoder[T]) extends Tap[T] {
   private[this] val _path = ScioUtil.addPartSuffix(path)
 
   override def value: Iterator[T] = {
@@ -87,17 +87,22 @@ private[scio] final case class MaterializeTap[T: ClassTag](path: String) extends
   }
 
   override def open(sc: ScioContext): SCollection[T] = sc.requireNotClosed {
+
+  private def dofn =
+    new DoFn[GenericRecord, T] {
+      @ProcessElement
+      private[scio] def processElement(c: DoFn[GenericRecord, T]#ProcessContext): Unit = {
+        c.output(AvroBytesUtil.decode(coder, c.element()))
+      }
+    }
+
+  override def open(sc: ScioContext): SCollection[T] = sc.requireNotClosed {
     import com.spotify.scio.Implicits._
 
     val coder = sc.pipeline.getCoderRegistry.getScalaCoder[T](sc.options)
     val read = AvroIO.readGenericRecords(AvroBytesUtil.schema).from(_path)
 
     sc.wrap(sc.applyInternal(read)).setName(_path)
-      .parDo(new DoFn[GenericRecord, T] {
-        @ProcessElement
-        private[scio] def processElement(c: DoFn[GenericRecord, T]#ProcessContext): Unit = {
-          c.output(AvroBytesUtil.decode(coder, c.element()))
-        }
-      })
+      .parDo(dofn)
   }
 }

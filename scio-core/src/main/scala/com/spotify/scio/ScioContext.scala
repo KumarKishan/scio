@@ -651,13 +651,13 @@ class ScioContext private[scio] (val options: PipelineOptions,
    * Distribute a local Scala `Map` to form an SCollection.
    * @group in_memory
    */
-  def parallelize[K: ClassTag, V: ClassTag](elems: Map[K, V]): SCollection[(K, V)] =
-  requireNotClosed {
-    val coder = pipeline.getCoderRegistry.getScalaKvCoder[K, V](options)
-    wrap(this.applyInternal(Create.of(elems.asJava).withCoder(coder)))
-      .map(kv => (kv.getKey, kv.getValue))
-      .setName(truncate(elems.toString()))
-  }
+  def parallelize[K, V](elems: Map[K, V])(implicit coder: Coder[(K, V)]): SCollection[(K, V)] =
+    requireNotClosed {
+      val kvc = CoderMaterializer.kvCoder[K, V](context)
+      wrap(this.applyInternal(Create.of(elems.asJava).withCoder(kvc)))
+        .map(kv => (kv.getKey, kv.getValue))
+        .setName(truncate(elems.toString()))
+    }
 
   /**
    * Distribute a local Scala `Iterable` with timestamps to form an SCollection.

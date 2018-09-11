@@ -335,7 +335,7 @@ object BigQueryTyped {
       createDisposition: CreateDisposition)
 
     @inline
-    final def apply[T <: HasAnnotation : ClassTag : TypeTag](table: TableReference): Table[T] =
+    final def apply[T <: HasAnnotation : ClassTag : TypeTag : Coder](table: TableReference): Table[T] =
       Table[T](beam.BigQueryHelpers.toTableSpec(table))
   }
 
