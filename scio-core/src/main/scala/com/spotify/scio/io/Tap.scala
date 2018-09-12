@@ -30,8 +30,6 @@ import org.apache.beam.sdk.transforms.DoFn
 import org.apache.beam.sdk.transforms.DoFn.ProcessElement
 import org.apache.beam.sdk.coders.{Coder => BCoder}
 
-import scala.reflect.ClassTag
-
 /**
  * Placeholder to an external data set that can either be load into memory as an iterator or
  * opened in a new [[ScioContext]] as an [[com.spotify.scio.values.SCollection SCollection]].
@@ -93,7 +91,6 @@ private[scio] class MaterializeTap[T: Coder] private (val path: String, coder: B
     }
 
   override def open(sc: ScioContext): SCollection[T] = sc.requireNotClosed {
-    import com.spotify.scio.Implicits._
     val read = AvroIO.readGenericRecords(AvroBytesUtil.schema).from(_path)
     sc.wrap(sc.applyInternal(read)).setName(_path)
       .parDo(dofn)

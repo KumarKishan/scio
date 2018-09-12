@@ -20,6 +20,29 @@ package com.spotify.scio.coders
 import org.apache.beam.sdk.{coders => bcoders}
 import org.apache.beam.sdk.coders.{ Coder => _, _}
 import org.apache.beam.sdk.values.KV
+import java.nio.ByteBuffer
+import java.io.{OutputStream, InputStream}
+
+final class ByteBufferCoder private[coders] () extends AtomicCoder[ByteBuffer] {
+  val bac = ByteArrayCoder.of()
+  def encode(value: ByteBuffer, os: OutputStream): Unit = {
+    val array =
+      if(value.hasArray) {
+        value.array()
+      } else {
+        value.clear()
+        val a = new Array[Byte](value.capacity())
+        value.get(a, 0, a.length)
+        a
+      }
+    bac.encode(array, os)
+  }
+
+  def decode(is: InputStream): ByteBuffer = {
+    val bytes = bac.decode(is)
+    ByteBuffer.wrap(bytes)
+  }
+}
 
 //
 // Java Coders
@@ -61,9 +84,13 @@ trait JavaCoders {
   implicit def mutationCaseCoder: Coder[com.google.bigtable.v2.Mutation.MutationCase] = Coder.kryo
   // implicit def mutationCoder: Coder[com.google.bigtable.v2.Mutation] = ???
 
-  import org.apache.beam.sdk.transforms.windowing.IntervalWindow
+  import org.apache.beam.sdk.transforms.windowing.{IntervalWindow, BoundedWindow}
   implicit def intervalWindowCoder: Coder[IntervalWindow] =
     Coder.beam(IntervalWindow.getCoder())
+
+  implicit def boundedWindowCoder: Coder[BoundedWindow] = Coder.kryo[BoundedWindow]
+
+  implicit def serializableCoder: Coder[Serializable] = Coder.kryo[Serializable]
 
   // implicit def paneinfoCoder: Coder[PaneInfo] = ???
   implicit def instantCoder: Coder[org.joda.time.Instant] = Coder.beam(InstantCoder.of())
@@ -71,6 +98,10 @@ trait JavaCoders {
     Coder.beam(org.apache.beam.sdk.io.gcp.bigquery.TableRowJsonCoder.of())
   implicit def messageCoder: Coder[org.apache.beam.sdk.io.gcp.pubsub.PubsubMessage] =
     Coder.beam(org.apache.beam.sdk.io.gcp.pubsub.PubsubMessageWithAttributesCoder.of())
+
+  import java.nio.ByteBuffer
+  implicit def byteBufferCoder: Coder[ByteBuffer] =
+    Coder.beam(new ByteBufferCoder())
 
   implicit def beamKVCoder[K: Coder, V: Coder]: Coder[KV[K, V]] =
     Coder.kv(Coder[K], Coder[V])
